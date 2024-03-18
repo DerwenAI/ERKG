@@ -1,8 +1,8 @@
 # senzing_neo4j
 
 Demonstrate an integration of Senzing and Neo4j, using _entity resolution_
-in Senzing to resolve three datasets, then construct a _knowledge graph_
-in Neo4j from the results.
+in Senzing to resolve the business names and addresses for three datasets,
+then construct a _knowledge graph_ in Neo4j from the results.
 
 
 ## Set up environment
