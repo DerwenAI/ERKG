@@ -13,14 +13,14 @@ First, we need to discuss about _entity resolution_ (ER), which becomes especial
 Knowledge graphs help us understand about _relations_ between _entities_.
 You can think of these in terms of language grammar, where entities are "nouns" and relations are the "verbs" connecting them. In the sentence `"Jack catches the ball"` there are two entities `"Jack"` and `"the ball"` which are both nouns, and these are connected by a relation `"catches"` which is a verb.
 This approach of using graphs allows for very flexible ways of representing knowledge in general.
-Also, there are many powerful algorithms which can be used on graph data, such as the famous [PageRank](https://en.wikipedia.org/wiki/PageRank) used in search.
+Also, there are many powerful algorithms which can be applied for graph data, plus queries, graph machine learning, and so on.
 
 But there are caveats.
 If the quality of our input datasets is anything like _most_ data in the world, there will be errors.
 Imagine that someone named `"Robert Smith"` lives on `"First Street"` in a large city, and there's also `"Robert A. Smith"` and `"Robert Smith, Jr."` or some typo introduced in official records, confusing either their names or addresses.
 Either case makes record matching confusing and within public records "confusing" might get numbered in the tens, or hundreds, or thousands.
 On the one hand, `"Robert X."` might not be amused to receive an electricity bill for `"Robert A."` when the post office mixes up records.
-On the other hand, if `"Robert X."` recently fled from an arrest, `"Robert A."` is going to really hope the police department doesn't make the same mistake.
+On the other hand, if `"Robert X."` recently fled from an arrest, `"Robert A."` is going to hope the police department doesn't make the same mistake.
 
 When we build knowledge graphs we want to make sure that unique entities don't get fragmented into a bunch of other poorly connected entities.
 Nor do we want differing entities to get collapsed into one giant blob.
@@ -43,7 +43,6 @@ This is a much better way to produce useful graph data and make the most of KGs,
 ## Senzing and Neo4j background
 (**Report**)
 
-see 
 	1. Senzing
 		- <https://www.linkedin.com/events/7165310793893281793/comments/>
 		- currently the 6th generation industrial strength engine for _entity resolution_, since 2009 (shipping since 2012)
@@ -56,12 +55,14 @@ see
 	2. Neo4j
 		1. Graph Database
 		2. <https://www.youtube.com/watch?v=YDWkPFijKQ4&t=572s>
-		3. names, verbs, adjectives
+		3. names, verbs, adjectives => nodes, relations, properties
 		4. graphs help us understand relationships, while tables emphasize facts
 
 
 ## The input datasets
 (**Jupyter**)
+
+pulled from `1.datasets.ipynb`
 
 	1. Link to sources: SafeGraph POI, DoL WHISARD, SBA PPP
 	2. Set up env for Jupyter, etc.
@@ -79,6 +80,66 @@ see
 	4. Run entity resolution, explore within Senzing
 	5. Export JSON, linking entities and component records
 
+Launch a Linux server running Ubuntu 20.04 LTS server with 4 vCPU, 16 GB memory.
+
+See: <https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide>
+
+```bash
+wget https://senzing-production-apt.s3.amazonaws.com/senzingrepo_1.0.1-1_amd64.deb
+sudo apt install ./senzingrepo_1.0.1-1_amd64.deb
+sudo apt update
+sudo apt upgrade
+```
+
+Depending on the Linux distribution, this may require installing `libssl1.1` as well, which is described in
+<https://stackoverflow.com/questions/73251468/e-package-libssl1-1-has-no-installation-candidate>:
+
+```bash
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+```
+
+Then install Senzing, which will be located in the `/opt/senzing/data/current` directory:
+
+```bash
+sudo apt install senzingapi
+```
+
+Now create a project `~/senzing` in the current user's home directory and set up its configuration:
+
+```bash
+python3 /opt/senzing/g2/python/G2CreateProject.py ~/senzing
+cd ~/senzing
+source setupEnv
+./python/G2SetupConfig.py
+```
+
+Prepare to load our three datasets into Senzing as data sources:
+
+```bash
+./python/G2ConfigTool.py
+	+ addDataSource SAFEGRAPH
+	+ addDataSource DOL_WHISARD
+	+ addDataSource PPP_LOANS
+	+ save
+	+ y
+	+ quit
+```
+
+We'll specify using up to 16 threads, to parallelize the input process:
+
+```bash
+./python/G2Loader.py -f lv_data/poi.json -nt 16
+./python/G2Loader.py -f lv_data/dol.csv -nt 16
+./python/G2Loader.py -f lv_data/ppp.csv -nt 16
+```
+
+Finally, export the resolved entities as the `export.json` local file:
+
+```bash
+./python/G2Export.py -F JSON -o export.json
+```
+
 
 ## Working in Neo4j
 (**Desktop**)
@@ -90,8 +151,10 @@ see
     4. Describe the intended KG schema
 
 
-## Looking into the results
+## Examine the results
 (**Jupyter**)
+
+pull from `2.results.ipynb`
 
     1. Use the Neo4j driver in Python
 		- GDS
