@@ -1,17 +1,25 @@
-## Using Entity Resolution to construct a Knowledge Graph
+## Leverage entity resolution to construct knowledge graphs
 
 ## Introduction
-(**Report**)
 
-This article provides a hands-on tutorial to get started running both [Senzing](https://senzing.com/) for _entity resolution_ and [Neo4j](https://neo4j.com/) for _knowledge graphs_.
+This article provides a hands-on tutorial to get started running both [Senzing](https://senzing.com/) for _entity resolution_ and [Neo4j](https://neo4j.com/) for _knowledge graphs_, working in Python code.
 We'll begin with three datasets, clean up entities in the data, and finally build a knowledge graph from the results.
 The code shown here is intended to be simple to download, easy to follow, and presented so you can also try it with your own data.
 
-Although knowledge graphs (KGs) have been around for many years, there's been lots of recent interest due to uses with AI. For example, it turns out that KGs are super helpful to "ground" the prompts and results of chatbots, to reduce "hallucination" errors in AI models.
+In this tutorial we'll be working in two environments which require some hands-on configuration and coding.
+The examples show code at level which should be fine for most anyone working in data science.
+You need to have some familiarity with each of the following:
 
-First, we need to discuss about _entity resolution_ (ER), which becomes especially important when you're working with knowledge graphs.
-Knowledge graphs help us understand about _relations_ between _entities_.
-You can think of these in terms of language grammar, where entities are "nouns" and relations are the "verbs" connecting them. In the sentence `"Jack catches the ball"` there are two entities `"Jack"` and `"the ball"` which are both nouns, and these are connected by a relation `"catches"` which is a verb.
+  - simple Python programming
+  - using a Linux command line
+  - cloning a public repo from GitHub
+
+Although _knowledge graphs_ (KGs) have been around for many years, there's been lots of recent interest due to uses with AI. For example, it turns out that KGs are super helpful to "ground" the prompts and results of chatbots, to reduce "hallucination" errors in AI models.
+
+We need to discuss about _entity resolution_ (ER), which becomes especially important when you're working with knowledge graphs.
+Recognize that knowledge graphs help us understand about _relations_ between _entities_.
+You can think in terms of language grammar, where entities are the "nouns" and relations are the "verbs" connecting them.
+In the sentence `"Jack catches the ball"` there are two entities `"Jack"` and `"the ball"` which are both nouns, and these are connected by a relation `"catches"` which is a verb.
 This approach of using graphs allows for very flexible ways of representing knowledge in general.
 Also, there are many powerful algorithms which can be applied for graph data, plus queries, graph machine learning, and so on.
 
@@ -36,39 +44,148 @@ NER provides `"person"` and `"thing"` as labels.
 That's helpful for _parsing_ text, but not especially useful for constructing KGs.
 Your input data might contain references to different but overlapping entities, in which case after running NER you'll need to clean up the KG by _disambiguating_ entities **after** they've been linked.
 That's generally quite a mess, and can be costly.
-Use ER on the data records first, then build your graph.
+
+Use ER on your data records first, then build your graph.
 This is a much better way to produce useful graph data and make the most of KGs, AI applications, and so on.
 
 
 ## Senzing and Neo4j background
-(**Report**)
 
-	1. Senzing
-		- <https://www.linkedin.com/events/7165310793893281793/comments/>
-		- currently the 6th generation industrial strength engine for _entity resolution_, since 2009 (shipping since 2012)
-		- people on this team have 20+ years avg experience
-		- scales from the largest use cases all the way down to running on a laptop
-		- "We see transmissions, not cars."
-		- "Connect the right data to the right person, in real time."
-		- Speed, accuracy, throughput
-	
-	2. Neo4j
-		1. Graph Database
-		2. <https://www.youtube.com/watch?v=YDWkPFijKQ4&t=572s>
-		3. names, verbs, adjectives => nodes, relations, properties
-		4. graphs help us understand relationships, while tables emphasize facts
+Before we jump into code, let's cover some background about the two technologies we're showing in this tutorial: Senzing and Neo4j.
+
+[Senzing](https://senzing.com/) provides a 6th generation industrial strength engine for _entity resolution_.
+The product has been shipping since 2012 and is used around the world by law enforcement, tax authorities, defense/ intelligence agencies, and enterprise applications in general.
+The company's expertise in this field is stellar: people on this team have on average more than 20 years experience in entity resolution production, often in extreme cases.
+
+Note that the code for Senzing is open source.
+Check out <https://github.com/Senzing> on GitHub where you can find more than 30 public repos.
+You can download and get running right away, with a free license for up to 100,000 records.
+This scales from the largest use cases all the way down to running on a laptop.
+You can run from Docker containers available as source on GitHub or images on [Docker Hub](https://hub.docker.com/u/senzing), or develop code using [API bindings](https://docs.senzing.com/) for Java and Python.
+
+A motto at the company is "We see transmissions, not cars."
+To be clear, everything about this technology is laser-focused on providing speed, accuracy, and throughput for the best quality entity resolution available -- connecting the right data to the right person, in real time.
+For details about the company, see the ["Senzing AI: A New Era"](https://senzing.com/senzing-ai-video/).
+For deep-dives into how Senzing _entity resolution_ works, see these two techincal overview articles:
+
+  - ["Principle-Based Entity Resolution Explained"](https://senzing.com/principle-based-ER)
+  - ["Entity Resolution Capabilities to Consider"](https://senzing.com/er-capabilities)
+
+[Neo4j](https://neo4j.com/) is the world's most popular solution for graph databases.
+It provides native graph storage, graph data science, graph machine learning, analytics, and visualization -- with enterprise-grade security controls to scale transactional and analytic workloads.
+
+First released in 2010, Neo4j pioneered using [Cypher](https://en.wikipedia.org/wiki/Cypher_(query_language)), a declarative graph query language for _labeled property graphs_.
+As mentioned, graphs help us understand **relationships**.
+In contrast, relational databases, data warehouses, data lakes, data lakehouses, etc., tend to emphasize **facts**.
+That's important because AI -- and for that matter, _business decisions_ in general -- depend on relationships within the data.
+
+Extending from the "nouns" and "verbs" analogy we'd described above, Cypher also provides for _properties_.
+You can think of these as the "adjectives" in human language.
+The expressiveness of Cypher queries results in data analytics applications with 10x less code than comparable applications written in SQL.
+
+Neo4j has an incredible developer community, with so many resources available online.
+Check out  <https://github.com/neo4j> on GitHub for more than 70 public repos supporting a wide range of graph technologies.
+For an excellent introduction overall, see the recent ["Intro to Neo4j"](https://www.youtube.com/watch?v=YDWkPFijKQ4&t=572s) video.
+Also check the many courses, certifications programs, and other resources at [GraphAcademy](https://graphacademy.neo4j.com/).
+
+
+## Getting started with Neo4j
+
+To get started coding, first let's set up a _Neo4j Desktop_ application, beginning with the download instructions at <https://neo4j.com/download/> for your desktop or laptop.
+This is available on Mac, Linux, and Windows.
+While there are multiple ways to get started with Neo4j, Desktop provides a quick way to begin working with the general set of features that we'll need.
+
+Once the download completes, follow the [instructions to install the Desktop application](https://neo4j.com/docs/desktop-manual/current/installation/download-installation/) and register to obtain an activation key for it.
+Then open the application and copy/paste your activation key.
+
+Next, [create a new project and a database](https://neo4j.com/docs/desktop-manual/current/operations/create-dbms/) -- named `Senzing` in our example, located within the `Entity Resolution` project.
+By default `neo4j` is the user name for accessing this database, then Neo4j Desktop requires setting a password -- `Z1ngs3n!` in our example.
+You'll also need to select a version -- we'll use 5.17.0 which is recent at the time of this writing.
+
+![Neo4j Desktop application window](img/neo4j_desktop.png)
+
+Click on the newly created database, then a right side panel will show settings and administrative links -- as shown in the "Neo4j Desktop" figure.
+Click on the `Plugin` link, open the `Graph Data Science Library` drop-down, then install this plugin.
+We'll use the GDS library to access the Neo4j graph database through Python.
+
+Click on the reset button, next to `Stop` -- or simply stop the database, then start it again.
+Your GDS plugin will be in place, and local service endpoints for accessing the graph database should be ready.
+Now click on the `Details` link and find the port number for the [Bolt protocol](https://neo4j.com/docs/bolt/current/bolt/).
+In our example `7687` is the Bolt port number.
+
+Next, open a browser window to our GitHub public repo for this tutorial:
+
+  - <https://github.com/Senzing/ERKG>
+
+Clone the repo by copying its URL from GitHub, as shown in the "Clone public repo" figure.
+Then use the following steps to create your **working directory** on your desktop/laptop for this tutorial:
+
+```
+git clone https://github.com/Senzing/ERKG.git
+cd ERKG
+```
+
+After connecting into your working directory, create a file called `.env` which provides the credentials (Bolt URL, DBMS username, password) needed to access the database in Neo4j Desktop through Bolt:
+
+```
+NEO4J_BOLT=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASS=Z1ngs3n!
+```
+
+Neo4j Desktop provides many useful tools, including a browser for exploring your graph database and running [Cypher queries](https://neo4j.com/docs/cypher-manual/current/introduction/), and the [Bloom data visualization tool](https://neo4j.com/product/bloom/).
+You can also export and import "dumps" of your database on disk, to manage backups.
+
+Now you're good to go!
+For the rest of this tutorial, keep this Neo4j Desktop application running in the background.
+Even so, mostly we will access Neo4j through the [GDS library](https://neo4j.com/docs/graph-data-science/current/installation/neo4j-desktop/) using Python code.
 
 
 ## The input datasets
-(**Jupyter**)
 
-pulled from `1.datasets.ipynb`
+[ pull markdown+images from `datasets.ipynb` ]
 
-	1. Link to sources: SafeGraph POI, DoL WHISARD, SBA PPP
-	2. Set up env for Jupyter, etc.
-	2. Load each in a Pandas dataframe
-	3. Explore the ranges of fields available
-	4. Which details could be useful for constructing a KG?
+We'll be working with three datasets to run entity resoultion and build a knowledge graph.
+To start, let's set up a Python environment and install the libraries we'll need, then run code examples inside a [Jupyter](https://jupyter.org/) notebook.
+We show use of Python 3.11 here, although other recent versions should well too.
+
+Set up a virtual environment for Python and load the required dependencies:
+
+```
+python3.11 -m venv venv
+source venv/bin/activate
+python3 -m pip install -U pip wheel setuptools
+python3 -m pip install -r requirements.txt
+```
+
+This tutorial uses several popular libraries that are common in data science work:
+
+```
+icecream >= 2.1
+ipywidgets >= 8.1
+jupyterlab >= 4.1
+jupyterlab_execute_time >= 3.1
+matplotlib >= 3.8
+graphdatascience[networkx] >= 1.9
+python-dotenv >= 1.0
+seaborn >= 0.13
+tqdm >= 4.66
+watermark >= 2.4
+```
+
+Now run the 
+
+
+	1. Set up env for Python, Jupyter, Neo4j, etc.
+	2. Link to sources: SafeGraph POI, DoL WHISARD, SBA PPP
+	3. Load each dataset into a Pandas dataframe
+		- Explore the ranges of fields available
+	    - Which details could be useful for constructing a KG?
+	4. Use the GDS wrapper in Python
+		- <https://github.com/neo4j/graph-data-science-client>
+		- <https://neo4j.com/docs/graph-data-science/current/>
+		- Docs for Cypher <https://neo4j.com/docs/cypher-manual/current/introduction/>
+	5. Load records into Neo4j `:Record`​ nodes/props
 
 
 ## Using Senzing
@@ -141,31 +258,19 @@ Finally, export the resolved entities as the `export.json` local file:
 ```
 
 
-## Working in Neo4j
-(**Desktop**)
-
-    1. Set up Neo4j desktop
-		- Browser, Bloom vs. cloud, etc. 
-    2. Create a database
-    3. Run local service endpoint for accessing the graph DB
-    4. Describe the intended KG schema
-
-
 ## Examine the results
 (**Jupyter**)
 
 pull from `2.results.ipynb`
 
-    1. Use the Neo4j driver in Python
-		- GDS
-		- Point to docs for Cypher, Python API, etc.
-    2. Load entities into Pandas, run light summary analysis
-    3. Build a KG
+    1. Load entities into Pandas, run light summary analysis
+    2. Use the GDS wrapper over the Neo4j driver in Python
+    3. Connect the KG
 		1. Load entities into Neo4j `:Entity` nodes/props
-		2. Load datasets into Neo4j `:Record`​ nodes/props
-		3. Connect entities with resolve records, add props
-		4. Connect entities with related entities, add props
-		5. Simple initial schema on Desktop Browser: `CALL db.schema.visualization()`
+		2. Connect entities with resolved records, add props
+		3. Connect entities with related entities, add props
+		4. Simple initial schema on Desktop Browser: 
+			- `CALL db.schema.visualization()`
     4. Analyze impact of ER
 		1. Cypher + Pandas to analyze ER connectivity
 		2. Visualize to illustrate the convergence of the dataset records through entity resolution
@@ -185,4 +290,4 @@ pull from `2.results.ipynb`
 		- <https://neo4j.com/developer-blog/knowledge-graph-rag-application/>
 	2. Next steps...
 		- <https://graphacademy.neo4j.com/> 
-		- Senzing follow-up
+		- Senzing follow-ups
