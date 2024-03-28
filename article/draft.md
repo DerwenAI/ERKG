@@ -17,7 +17,7 @@ You need to have some familiarity with each of the following:
 Although _knowledge graphs_ (KGs) have been around for many years, there's been lots of recent interest due to uses with AI. For example, it turns out that KGs are super helpful to "ground" the prompts and results of chatbots, to reduce "hallucination" errors in AI models.
 
 We need to discuss about _entity resolution_ (ER), which becomes especially important when you're working with knowledge graphs.
-Recognize that knowledge graphs help us understand about _relations_ between _entities_.
+Recognize that knowledge graphs help us understand _relations_ between _entities_.
 You can think in terms of language grammar, where entities are the "nouns" and relations are the "verbs" connecting them.
 In the sentence `"Jack catches the ball"` there are two entities `"Jack"` and `"the ball"` which are both nouns, and these are connected by a relation `"catches"` which is a verb.
 This approach of using graphs allows for very flexible ways of representing knowledge in general.
@@ -31,7 +31,7 @@ On the one hand, `"Robert X."` might not be amused to receive an electricity bil
 On the other hand, if `"Robert X."` recently fled from an arrest, `"Robert A."` is going to hope the police department doesn't make the same mistake.
 
 When we build knowledge graphs we want to make sure that unique entities don't get fragmented into a bunch of other poorly connected entities.
-Nor do we want differing entities to get collapsed into one giant blob.
+Nor do we want different entities to get collapsed into one giant blob.
 The process of ER involves highly sophisticated decisions about input data records, being careful to consolidate multiple references to the same entity together, while splitting references which are different.
 In other words, when we scan a thousand records from different sources describing a community, then based on names and addresses we want to determine which records are shared by the same entity, and which records represent unique entities.
 
@@ -55,7 +55,7 @@ Before we jump into code, let's cover some background about the two technologies
 
 [Senzing](https://senzing.com/) provides a 6th generation industrial strength engine for _entity resolution_.
 The product has been shipping since 2012 and is used around the world by law enforcement, tax authorities, defense/ intelligence agencies, and enterprise applications in general.
-The company's expertise in this field is stellar: people on this team have on average more than 20 years experience in entity resolution production, often in extreme cases.
+The company's expertise in this field is stellar: people on this team have on average more than 20 years experience in ER production, often in extreme cases.
 
 Note that the code for Senzing is open source.
 Check out <https://github.com/Senzing> on GitHub where you can find more than 30 public repos.
@@ -64,9 +64,9 @@ This scales from the largest use cases all the way down to running on a laptop.
 You can run from Docker containers available as source on GitHub or images on [Docker Hub](https://hub.docker.com/u/senzing), or develop code using [API bindings](https://docs.senzing.com/) for Java and Python.
 
 A motto at the company is "We see transmissions, not cars."
-To be clear, everything about this technology is laser-focused on providing speed, accuracy, and throughput for the best quality entity resolution available -- connecting the right data to the right person, in real time.
+To be clear, everything about this technology is laser-focused on providing speed, accuracy, and throughput for the best quality ER available -- connecting the right data to the right person, in real time.
 For details about the company, see the ["Senzing AI: A New Era"](https://senzing.com/senzing-ai-video/).
-For deep-dives into how Senzing _entity resolution_ works, see these two techincal overview articles:
+For deep-dives into how Senzing _entity resolution_ works, see these two technical overview articles:
 
   - ["Principle-Based Entity Resolution Explained"](https://senzing.com/principle-based-ER)
   - ["Entity Resolution Capabilities to Consider"](https://senzing.com/er-capabilities)
@@ -89,7 +89,7 @@ For an excellent introduction overall, see the recent ["Intro to Neo4j"](https:/
 Also check the many courses, certifications programs, and other resources at [GraphAcademy](https://graphacademy.neo4j.com/).
 
 
-## Getting started with Neo4j
+## Get started with Neo4j
 
 To get started coding, first let's set up a _Neo4j Desktop_ application, beginning with the download instructions at <https://neo4j.com/download/> for your desktop or laptop.
 This is available on Mac, Linux, and Windows.
@@ -143,10 +143,10 @@ Even so, mostly we will access Neo4j through the [GDS library](https://neo4j.com
 
 ## The input datasets
 
-We'll be working with three datasets to run entity resoultion and build a knowledge graph.
+We'll be working with three datasets to run entity resolution and build a knowledge graph.
 To start, let's set up a Python environment and install the libraries we'll need.
 Then we can run code examples inside [Jupyter](https://jupyter.org/) notebooks.
-We show use of Python 3.11 here, although other recent versions of Python should well too.
+We show use of Python 3.11 here, although other recent versions of Python should work well too.
 
 Set up a virtual environment for Python and load the required dependencies:
 
@@ -198,7 +198,7 @@ import watermark
 ```
 
 The `graphdatascience` import loads the GDS library for Neo4j.
-This will work alongside the [`pandas`](https://pandas.pydata.org/) library to do th heavy-lifting in this part of the tutorial.
+This will work alongside the [`pandas`](https://pandas.pydata.org/) library to do the heavy-lifting in this part of the tutorial.
 
 Let's double-check the [watermark](https://github.com/rasbt/watermark) trace, in case anyone needs to troubleshoot dependencies on their system:
 
@@ -240,7 +240,7 @@ In this tutorial, we'll use three datasets, each of which describe business info
   - US Small Business Administration `PPP Loans over $150K` (PPP)
 
 Two of these datasets are public, and one is available commercially.
-You can obtain full version of each dataset from the links given below.
+You can obtain a full version of each dataset from the links given below.
 In this tutorial we'll use versions of these datasets which have been constrained to businesses within the Las Vegas metropolitan area.
 We've also included a `DATA_SOURCE` column to each dataset, so we can load and track records in Senzing later.
 
@@ -276,7 +276,7 @@ Taking a look at the column names...
 df_poi.columns
 ```
 
-...the `"DATA_SOURCE"`, `"RECORD_ID"`, `"RECORD_TYPE"` columns are needed by Senzing to identify unique records, then other columns related to names or addresses will also get used during _entity resolution_:
+...the `"DATA_SOURCE"`, `"RECORD_ID"`, `"RECORD_TYPE"` columns are needed by Senzing to identify unique records, then other columns related to names or addresses will also get used during ER:
 
 ```
 Index(['DATA_SOURCE', 'RECORD_ID', 'RECORD_TYPE', 'PLACEKEY',
@@ -325,7 +325,7 @@ df.describe().loc[[ "count", "freq", "unique", ]]
 Great, we've got nearly 98,806 records to work with, and their `RECORD_ID` values are all unique.
 There are nearly 400 different kinds of business categories, which should be fun to visualize.
 
-Quite interestingly, there are 84,643 unique values of `LOCATION_NAME_ORG` and 43,900 unique values of `BUSINESS_ADDR_FULL` -- which implies there is overlap among the buiness entities.
+Quite interestingly, there are 84,643 unique values of `LOCATION_NAME_ORG` and 43,900 unique values of `BUSINESS_ADDR_FULL` -- which implies there is overlap among the business entities.
 Clearly, we'll need to run _entity resolution_ to make use of this dataset!
 
 Next, let's load the `Wage and Hour Compliance Action Data` (WHISARD) dataset for Las Vegas, from the US Department of Labor: <https://enforcedata.dol.gov/views/data_summary.php>
@@ -378,7 +378,7 @@ df.head()
 ![sample DOL data](img/datasets.dol_head.png)
 
 Again we have unique record IDs, business names and addresses, then also some [NAICS](https://www.census.gov/naics/) business classification info -- which the POI dataset also includes.
-The `case_violtn_cnt` column provides a count of compilance violation cases, and that might be interesting to use in graph queries later.
+The `case_violtn_cnt` column provides a count of compliance violation cases, and that might be interesting to use in graph queries later.
 
 Analyzing data values in this sample:
 
@@ -473,7 +473,23 @@ To learn more details about using GDS in Python, see its source repo and docs:
   - <https://github.com/neo4j/graph-data-science-client>
   - <https://neo4j.com/docs/graph-data-science/current/>
 
-Let's define two utility methods to help clean data in our datasets when loading records into Neo4j:
+To prepare to add structure to our graph, by adding [_constraints_](https://neo4j.com/docs/cypher-manual/current/constraints/) to ensure uniqueness of records and entities, where we expect uniqueness.
+
+```python
+gds.run_cypher("""
+CREATE CONSTRAINT unique_record 
+    IF NOT EXISTS FOR (rec:Record) 
+    REQUIRE rec.uid IS UNIQUE
+""")
+
+gds.run_cypher("""
+CREATE CONSTRAINT unique_entity 
+    IF NOT EXISTS FOR (ent:Entity) 
+    REQUIRE ent.uid IS UNIQUE
+""")
+```
+
+Now let's define two utility methods to help clean the data from our datasets when loading records into Neo4j:
 
 ```python
 def get_property_keys (
@@ -544,14 +560,15 @@ Note that the Neo4j node for each loaded record has:
   - properties to represent other fields from the datasets
 
 
-## Getting started with Senzing
+## Get started with Senzing
 
 Next we'll set up Senzing and load these three datasets, then run _entity resolution_.
 
 There are several convenient ways to get started with [Senzing](https://senzing.com/explore-senzing-entity-resolution/).
 Production use cases typically develop a Java or Python application, which call Senzing running in a container -- as a microservice.
-For the purposes of illustrating how to integrate Senzing _entity resolution_ and Neo4j _graph databases_ to build _knowledge graphs, we will run Senzing on a Linux server in a cloud.
-Then we can import/export files with the cloud-based server.
+For the purposes of illustrating how to integrate Senzing ER and Neo4j to build a _knowledge graph, we'll run Senzing on a Linux server in a cloud.
+The steps to access from a Linux command line are simple, and there's already some _proof-of-concept_ demo code available in Python.
+We can simply import our datasets to the cloud server, then export the ER results from it using file transfer.
 
 We'll follow steps from the ["Quickstart Guide"](https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide), based on using Debian (Ubuntu) Linux.
 First, we need to launch a Linux server using one of the popular cloud providers (pick one, any one) which is running an Ubuntu 20.04 LTS server with 4 vCPU and 16 GB memory.
@@ -628,7 +645,7 @@ Next, prepare to load these three datasets as Senzing _data sources_:
 
 It may be simpler to run the `./python/G2ConfigTool.py` configuration tool, then type the commands shown above at its command prompt.
 
-Now we're ready to run Senzing _entity resolution_.
+Now we're ready to run ER in Senzing.
 We'll specify using up to 16 threads, to parallelize the input process.
 That way the following steps take advantage of our multiple CPU cores and complete within just a few minutes:
 
@@ -681,7 +698,7 @@ That was quick.
 
 ## Build a knowledge graph
 
-Now return to your Jupyter browser tab and open the `results.ipynb` notebook.
+Now return to your Jupyter browser tab and open the `graph.ipynb` notebook.
 Again, we need to import Python library dependencies:
 
 ```python
@@ -736,23 +753,222 @@ sys       : 3.11.0 (v3.11.0:deaf509e8f, Oct 24 2022, 14:43:23) [Clang 13.0.0 (cl
 seaborn   : 0.13.2
 ```
 
+We're ready to parse the ER results from Senzing, then use these to construct a _knowledge graph_ in Neo4j.
+The entities and relations derived from ER will get used to link the structure initially in our KG.
 
-> pull markdown+images from `results.ipynb`
+Let's define a `dataclass` to represent the parsed results from ER as Python objects:
 
-    1. Load entities into Pandas, run light summary analysis
-    2. Use the GDS wrapper over the Neo4j driver in Python
-    3. Connect the KG
-		1. Load entities into Neo4j `:Entity` nodes/props
-		2. Connect entities with resolved records, add props
-		3. Connect entities with related entities, add props
-		4. Simple initial schema on Desktop Browser: 
-			- `CALL db.schema.visualization()`
+```python
+@dataclass(order=False, frozen=False)
+class Entity:  # pylint: disable=R0902
+    """
+A data class representing a resolved entity.
+    """
+    entity_id: id
+    num_recs: int
+    records: typing.Set[ str ] = field(default_factory = lambda: set([]))
+    related: typing.Dict[ int, dict ] = field(default_factory = lambda: {})
+    has_ref: bool = False
+```
+
+Now let's parse the JSON data from the export -- in the `export.json` file downloaded from the cloud server.
+We'll build a dictionary of entities indexed by unique identifiers, keeping track of both the "resolved" and "related" records for each entity to use later when constructing the KG:
+
+```python
+export_path: pathlib.Path = pathlib.Path("export.json")
+entities: dict = {}
+
+with export_path.open() as fp:
+    for line in tqdm(fp.readlines(), desc = "read JSON"):
+        entity_dat: dict = json.loads(line)
+        entity_id: int = entity_dat["RESOLVED_ENTITY"]["ENTITY_ID"]
+
+        records: set = set([
+            ".".join([ r["DATA_SOURCE"], r["RECORD_ID"] ]).upper()
+            for r in entity_dat["RESOLVED_ENTITY"]["RECORDS"]
+        ])
+
+        entities[entity_id] = Entity(
+            entity_id = entity_id,
+            records = records,
+            num_recs = len(records),
+            related = {
+                r["ENTITY_ID"]: r
+                for r in entity_dat["RELATED_ENTITIES"]
+            },
+        )
+```
+
+On a not-so-new Mac laptop, this should run in about 3 seconds.
+Looking at one of these parsed entity records...
+
+```json
+{'RESOLVED_ENTITY': {'ENTITY_ID': 438737,
+  'RECORDS': [{'DATA_SOURCE': 'SAFEGRAPH',
+    'RECORD_ID': 'zzw-222@5yv-c8t-t7q',
+    'ENTITY_TYPE': 'GENERIC',
+    'INTERNAL_ID': 438737,
+    'ENTITY_KEY': '7A2952039A2EDAE86C89FF025284618BB47F5B0E',
+    'ENTITY_DESC': 'Royalty Renee Salez',
+    'MATCH_KEY': '',
+    'MATCH_LEVEL': 0,
+    'MATCH_LEVEL_CODE': '',
+    'ERRULE_CODE': '',
+    'LAST_SEEN_DT': '2024-03-12 18:54:15.638'}]},
+ 'RELATED_ENTITIES': []}
+```
+
+...we have entity and record IDs, so we can link these as relations in the graph data.
+We've also got interesting info about how the record matches were determined, which could be used as properties on the graph relations.
+
+Again, we run code to create a GDS connection to our Neo4j graph database.
+At this point it's relatively simple to load the entities as nodes:
+
+```python
+query: str = """
+MERGE (ent:Entity {uid: $params.uid, has_ref: $params.has_ref})
+"""
+
+for entity in tqdm(entities.values(), desc = "merge entity nodes"):
+    params = {
+        "uid": entity.entity_id,
+        "has_ref": entity.has_ref,
+    }
+
+    gds.run_cypher(
+         query,
+         input = params,
+    )
+```
+
+Now we'll connect each entity with its resolved records:
+
+```python
+query = """
+MATCH
+    (ent:Entity {uid: $params.entity_uid}),
+    (rec:Record {uid: $params.record_uid})       
+MERGE (ent)-[:RESOLVES]->(rec)
+"""
+
+for entity in tqdm(entities.values(), desc = "merge ent->rec"):
+    for record_uid in entity.records:
+        params = {
+            "entity_uid": entity.entity_id,
+            "record_uid": record_uid,
+        }
+
+        gds.run_cypher(query, input = params)
+```
+
+Similarly, we'll connect each entity with its related entities, if any:
+
+```python
+query = """
+MATCH
+    (ent:Entity {uid: $params.entity_uid}),
+    (rel_ent:Entity {uid: $params.rel_ent})       
+MERGE (ent)-[:RELATED {ambiguous: $params.ambiguous, disclosed: $params.disclosed, match_key: $params.match_key, match_level: $params.match_level, match_level_code: $params.match_level_code}]->(rel_ent)
+"""
+
+for entity in tqdm(entities.values(), desc = "merge ent->rel"):
+    for rel_key, rel_ent in entity.related.items():
+        params = {
+            "entity_uid": entity.entity_id,
+            "rel_ent": rel_ent["ENTITY_ID"],
+            "ambiguous": (rel_ent["IS_AMBIGUOUS"] == 0),
+            "disclosed": (rel_ent["IS_DISCLOSED"] == 0),
+            "match_key": rel_ent["MATCH_KEY"],
+            "match_level": rel_ent["MATCH_LEVEL"],
+            "match_level_code": rel_ent["MATCH_LEVEL_CODE"],
+        }
+
+        gds.run_cypher(query, input = params)
+```
+
+Now let's look at the _schema_ which we've built so far in our graph database -- in other words, the structure of our KG so far.
+In the **Browser** window of Neo4j Desktop, run the following Cypher command at the `neo4j$` prompt to visualize the database schema:
+
+```
+CALL db.schema.visualization()
+```
+
+![initial graph schema](img/schema.1.png)
+
+This is starting to resemble a knowledge graph!
+Let's dig into more details...
+
+
+Since we're trying to link records across the three datasets, it'd be helpful to understand the degree to which Senzing ER 
+linked these records.
+Let's repeat the following _graph data science_ sequence of steps to explore linking:
+
+  - run a Cypher query in Neo4j using GDS
+  - produce query results as Pandas dataframes
+  - use [Seaborn](https://seaborn.pydata.org/) to visualize the dataframe results
+
+```python
+df = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RELATED]->(:Entity) } as num_rel
+ORDER BY num_rel DESC
+  """
+)
+
+fig, ax = plt.subplots()
+plt.rcParams["font.family"] = "sans-serif"
+
+y = sns.lineplot(df, y = "count_ent", x = "num_rel")
+y.tick_params(axis = "y", size = 9, colors = "gray")
+
+plt.xlabel("related entities per entity", size = 10, fontstyle = "italic")
+plt.ylabel("entity count", size = 10, fontstyle = "italic")
+
+sns.despine(bottom = True, left = True)
+plt.yscale("log")
+```
+
+![plot: entities count vs. related entities per entity](img/graphs.plot.ent_rel.png)
+
+```python
+df = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
+ORDER BY num_rec DESC
+  """
+)
+
+fig, ax = plt.subplots()
+plt.rcParams["font.family"] = "sans-serif"
+
+y = sns.barplot(df, y = "count_ent", x = "num_rec")
+y.tick_params(axis = "y", size = 9, colors = "gray")
+y.bar_label(y.containers[0], padding = 3, color = "black", fontsize = 11)
+
+plt.xlabel("records per entity", size = 10, fontstyle = "italic")
+plt.ylabel("entity count", size = 10, fontstyle = "italic")
+
+sns.despine(bottom = True, left = True)
+plt.yscale("log")
+```
+
+![histogram: entities count vs. records per entity](img/graphs.plot.ent_rec.png)
+
+On average, each entity has about 5 records linked.
+One of them has 15 records!
+Imagine if you'd been `"Robert Smith"` with 15 dopplegangers out there in the Las Vegas municial records?
+
+
+> pull markdown+images from `graph.ipynb`
+
     4. Analyze impact of ER
 		1. Cypher + Pandas to analyze ER connectivity
 		2. Visualize to illustrate the convergence of the dataset records through entity resolution
 
 
-## What's difficult to obtain without a graph database?
+## What's tough to get without a graph database?
 
 TBD
 
