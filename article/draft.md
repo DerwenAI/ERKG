@@ -167,6 +167,7 @@ jupyterlab_execute_time >= 3.1
 matplotlib >= 3.8
 graphdatascience[networkx] >= 1.9
 python-dotenv >= 1.0
+pyvis >= 0.3
 seaborn >= 0.13
 tqdm >= 4.66
 watermark >= 2.4
@@ -550,8 +551,9 @@ load_records(gds, df_ppp)
 
 Boom!
 There are more than 100,000 records represented as nodes in Neo4j.
-However, there are no links between these nodes, and clearly there was overlap among business names and addresses.
-We'll fix that next, then see how this data starts becoming a graph.
+However, these nodes have no connections. 
+Clearly there was overlap among the business names and addresses, but we don’t have any of them resolved as entities yet. 
+We’ll fix that next, then see how this data starts becoming a graph.
 
 Note that the Neo4j node for each loaded record has:
 
@@ -715,6 +717,7 @@ from tqdm import tqdm
 import dotenv
 import matplotlib.pyplot as plt
 import pandas as pd
+import pyvis
 import seaborn as sns
 import watermark
 
@@ -956,16 +959,54 @@ plt.yscale("log")
 
 ![histogram: entities count vs. records per entity](img/graphs.plot.ent_rec.png)
 
-On average, each entity has about 5 records linked.
+On average, each entity has more than 2 records linked.
 One of them has 15 records!
 Imagine if you'd been `"Robert Smith"` with 15 dopplegangers out there in the Las Vegas municial records?
 
+But we can do better.
+Let's use the [PyVis](https://pyvis.readthedocs.io/en/latest/) library in Python to visualize relations in our KG.
+In other words, we'll visualize the knowledge graph to illustrate how much convergence of dataset records we achieved through entity resolution:
 
-> pull markdown+images from `graph.ipynb`
+```python
+df = gds.run_cypher(
+  """
+MATCH (ent:Entity)-[:RESOLVES]->(rec:Record)
+RETURN ent.uid AS ent_uid, rec.uid AS rec_uid, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
+  """
+)
 
-    4. Analyze impact of ER
-		1. Cypher + Pandas to analyze ER connectivity
-		2. Visualize to illustrate the convergence of the dataset records through entity resolution
+df_linked = df[df["num_rec"] > 1]
+
+net: pyvis.network.Network = pyvis.network.Network(notebook = True)
+
+for _, row in df_linked.iterrows():
+    net.add_node(row.rec_uid, title = row.rec_uid, color = "blue", shape = "square")
+
+net.toggle_physics(True)
+net.show("vegas.1.html")
+```
+
+![network: unlinked records](img/vegas.1.png)
+
+This shows just the records from the three datasets, loaded into Neo4j.
+It's not really a graph yet, because it doesn't have any links.
+
+```python
+net: pyvis.network.Network = pyvis.network.Network(notebook = True)
+
+for _, row in df_linked.iterrows():
+    net.add_node(row.rec_uid, title = row.rec_uid, color = "blue", shape = "square")
+    net.add_node(row.ent_uid, title = str(row.ent_uid), color = "red", shape = "star", size = row.num_rec)
+    net.add_edge(row.rec_uid, row.ent_uid, weight = 1.0)
+
+net.toggle_physics(True)
+net.show("vegas.2.html")
+```
+
+![network: entities linked with records](img/vegas.2.png)
+
+Et voilà – our graph begins to emerge!
+Notice the 15 doppelgangers of our old friend Robert?
 
 
 ## What's tough to get without a graph database?
