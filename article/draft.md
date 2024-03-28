@@ -136,7 +136,7 @@ NEO4J_PASS=Z1ngs3n!
 Neo4j Desktop provides many useful tools, including a browser for exploring your graph database and running [Cypher queries](https://neo4j.com/docs/cypher-manual/current/introduction/), and the [Bloom data visualization tool](https://neo4j.com/product/bloom/).
 You can also export and import "dumps" of your database on disk, to manage backups.
 
-Now you're good to go!
+Neo4j is good to go!
 For the rest of this tutorial, keep this Neo4j Desktop application running in the background.
 Even so, mostly we will access Neo4j through the [GDS library](https://neo4j.com/docs/graph-data-science/current/installation/neo4j-desktop/) using Python code.
 
@@ -172,7 +172,7 @@ tqdm >= 4.66
 watermark >= 2.4
 ```
 
-Now launch Jupyter and run the `datasets.ipynb` notebook:
+Now launch Jupyter:
 
 ```bash
 ./venv/bin/jupyter lab
@@ -180,29 +180,380 @@ Now launch Jupyter and run the `datasets.ipynb` notebook:
 
 JupyterLab should automagically open in your browser.
 Otherwise, open <http://localhost:8888/lab> in a new browser tab.
+Then run the `datasets.ipynb` notebook.
 
-> pull markdown+images from `datasets.ipynb`
+First we need to import the Python library dependencies required for the code we'll be running:
 
-	1. Set up env for Python, Jupyter, Neo4j, etc.
-	2. Link to sources: SafeGraph POI, DoL WHISARD, SBA PPP
-	3. Load each dataset into a Pandas dataframe
-		- Explore the ranges of fields available
-	    - Which details could be useful for constructing a KG?
-	4. Use the GDS wrapper in Python
-		- <https://github.com/neo4j/graph-data-science-client>
-		- <https://neo4j.com/docs/graph-data-science/current/>
-		- Docs for Cypher <https://neo4j.com/docs/cypher-manual/current/introduction/>
-	5. Load records into Neo4j `:Record`​ nodes/props
+```python
+import json
+import pathlib
+import sys
+import typing
+
+from graphdatascience import GraphDataScience
+import pandas as pd
+import watermark
+
+%load_ext watermark
+```
+
+The `graphdatascience` import loads the GDS library for Neo4j.
+This will work alongside the [`pandas`](https://pandas.pydata.org/) library to do th heavy-lifting in this part of the tutorial.
+
+Let's double-check the [watermark](https://github.com/rasbt/watermark) trace, in case anyone needs to troubleshoot dependencies on their system:
+
+```python
+%watermark
+%watermark --iversions
+```
+
+For example, the results should look like:
+
+```
+Last updated: 2024-03-26T15:51:15.530137-07:00
+
+Python implementation: CPython
+Python version       : 3.11.0
+IPython version      : 8.22.2
+
+Compiler    : Clang 13.0.0 (clang-1300.0.29.30)
+OS          : Darwin
+Release     : 21.6.0
+Machine     : x86_64
+Processor   : i386
+CPU cores   : 8
+Architecture: 64bit
+
+json     : 2.0.9
+watermark: 2.4.3
+pandas   : 2.2.1
+sys      : 3.11.0 (v3.11.0:deaf509e8f, Oct 24 2022, 14:43:23) [Clang 13.0.0 (clang-1300.0.29.30)]
+```
+
+Python, Jupyter, GDS, Pandas, and friends are good to go!
+Let's leverage these to explore the datasets we'll be using.
+
+In this tutorial, we'll use three datasets, each of which describe business info -- names, addresses, plus other details, depending on the dataset:
+
+  - SafeGraph `Places of Interest` (POI)
+  - US Dept of Labor `Wage and Hour Compliance Action Data` (WHISARD)
+  - US Small Business Administration `PPP Loans over $150K` (PPP)
+
+Two of these datasets are public, and one is available commercially.
+You can obtain full version of each dataset from the links given below.
+In this tutorial we'll use versions of these datasets which have been constrained to businesses within the Las Vegas metropolitan area.
+We've also included a `DATA_SOURCE` column to each dataset, so we can load and track records in Senzing later.
+
+Note that we don't need to show all of the columns available for each dataset, but let's explore a few key ones.
+To help do this, we'll define a utility function `sample_df()` to show a subset of the columns in a Pandas `DataFrame` object:
+
+```python
+def sample_df (
+    df: pd.DataFrame,
+    cols_keep: typing.Set[ typing.Any ],
+    ) -> pd.DataFrame:
+    """
+Remove all but the specified columns from a copy of the given Pandas dataframe.
+https://stackoverflow.com/a/51285940/1698443
+    """
+    diff: typing.Set[ typing.Any ] = set(df.columns) - cols_keep
+    return df.drop(diff, axis = 1, inplace = False)
+```
+
+Now let's load the `Places of Interest` (POI) dataset for Las Vegas, which can be obtained from SafeGraph: <https://www.safegraph.com/products/places>
+
+```python
+poi_path: pathlib.Path = pathlib.Path("lv_data") / "poi.json"
+
+df_poi: pd.DataFrame = pd.DataFrame.from_dict(
+    [ json.loads(line) for line in poi_path.open(encoding = "utf-8") ],
+)
+```
+
+Taking a look at the column names...
+
+```python
+df_poi.columns
+```
+
+...the `"DATA_SOURCE"`, `"RECORD_ID"`, `"RECORD_TYPE"` columns are needed by Senzing to identify unique records, then other columns related to names or addresses will also get used during _entity resolution_:
+
+```
+Index(['DATA_SOURCE', 'RECORD_ID', 'RECORD_TYPE', 'PLACEKEY',
+       'LOCATION_NAME_ORG', 'BRANDS', 'TOP_CATEGORY', 'SUB_CATEGORY',
+       'NAICS_CODE', 'BUSINESS_GEO_LATITUDE', 'BUSINESS_GEO_LONGITUDE',
+       'CATEGORY_TAGS', 'CLOSED_ON', 'TRACKING_CLOSED_SINCE', 'PHONE_NUMBER',
+       'BUSINESS_ADDR_COUNTRY', 'BUSINESS_ADDR_FULL',
+       'MAILING_VERIFIED_STATUS', 'OPENED_ON', 'IS_INTERSECTION'],
+      dtype='object')
+```
+
+See the [SafeGraph docs](https://docs.safegraph.com/docs/places-base-attributes) for detailed descriptions of the data in each of these columns.
+
+Let's check out a few key columns:
+
+```python
+df = sample_df(
+    df_poi,
+    set([
+        "RECORD_ID",
+        "LOCATION_NAME_ORG",
+        "SUB_CATEGORY",
+        "BUSINESS_GEO_LATITUDE",
+        "BUSINESS_GEO_LONGITUDE",
+        "BUSINESS_ADDR_FULL",
+    ]),
+)
+
+df.head()
+```
+
+![sample POI data](img/datasets.poi_head.png)
+
+From this sample, note the unique values in `RECORD_ID` plus the business names and addresses.
+The business category values could be used to add structure to the knowledge graph -- as a kind of _taxonomy_.
+The latitude/longitude geo-coordinates can also help us convert the results of graph queries into map visualizations.
+
+Let's analyze the data values in these columns:
+
+```python
+df.describe().loc[[ "count", "freq", "unique", ]]
+```
+
+![analysis of sample POI data](img/datasets.poi_deets.png)
+
+Great, we've got nearly 98,806 records to work with, and their `RECORD_ID` values are all unique.
+There are nearly 400 different kinds of business categories, which should be fun to visualize.
+
+Quite interestingly, there are 84,643 unique values of `LOCATION_NAME_ORG` and 43,900 unique values of `BUSINESS_ADDR_FULL` -- which implies there is overlap among the buiness entities.
+Clearly, we'll need to run _entity resolution_ to make use of this dataset!
+
+Next, let's load the `Wage and Hour Compliance Action Data` (WHISARD) dataset for Las Vegas, from the US Department of Labor: <https://enforcedata.dol.gov/views/data_summary.php>
+
+```python
+dol_path: pathlib.Path = pathlib.Path("lv_data") / "dol.csv"
+df_dol: pd.DataFrame = pd.read_csv(dol_path, dtype = str, encoding = "utf-8")
+```
+
+You'll need to click through links on the DoL web site to reach their _data dictionary_ which describes each of the fields.
+It's not possible to link directly to this information.
+
+Looking at the column names...
+
+```python
+df_dol.columns
+```
+
+...again we have `DATA_SOURCE`, `RECORD_ID`, plus business names and address info, followed by lots of DoL compliance data about hourly workers:
+
+```
+Index(['RECORD_TYPE', 'DATA_SOURCE', 'RECORD_ID', 'case_id',
+       'BUSINESS_NAME_ORG', 'LEGAL_NAME_ORG', 'BUSINESS_ADDR_LINE1',
+       'BUSINESS_ADDR_CITY', 'BUSINESS_ADDR_STATE',
+       'BUSINESS_ADDR_POSTAL_CODE',
+       ...
+       'flsa_smwsl_bw_atp_amt', 'flsa_smwsl_ee_atp_cnt', 'eev_violtn_cnt',
+       'h2b_violtn_cnt', 'h2b_bw_atp_amt', 'h2b_ee_atp_cnt', 'sraw_violtn_cnt',
+       'sraw_bw_atp_amt', 'sraw_ee_atp_cnt', 'ld_dt'],
+      dtype='object', length=113)
+```
+
+Let's check some of the more interesting columns:
+
+```python
+df = sample_df(
+    df_dol,
+    set([
+        "RECORD_ID",
+        "BUSINESS_NAME_ORG",
+        "BUSINESS_ADDR_LINE1",
+        "naics_code_description",
+        "case_violtn_cnt",
+    ]),
+)
+
+df.head()
+```
+
+![sample DOL data](img/datasets.dol_head.png)
+
+Again we have unique record IDs, business names and addresses, then also some [NAICS](https://www.census.gov/naics/) business classification info -- which the POI dataset also includes.
+The `case_violtn_cnt` column provides a count of compilance violation cases, and that might be interesting to use in graph queries later.
+
+Analyzing data values in this sample:
+
+```python
+df.describe().loc[[ "count", "freq", "unique", ]]
+```
+
+![analysis of sample DOL data](img/datasets.dol_deets.png)
+
+Again, the record IDs are unique and there's overlap among business names and addresses.
+However, we only have 1533 records here, so it's likely that not every resolved entity will link to DOL information.
+But we'll make use of what we've got.
+
+Next we'll load the `PPP Loans over $150K` (PPP) dataset for Las Vegas, from the US Small Business Administration: <https://data.sba.gov/dataset/ppp-foia>
+
+```python
+ppp_path: pathlib.Path = pathlib.Path("lv_data") / "ppp.csv"
+
+df_ppp: pd.DataFrame = pd.read_csv(
+    ppp_path,
+    dtype = str,
+    encoding = "utf-8",
+)
+
+df_ppp.columns
+```
+
+This dataset adds more details from US federal open data about each business, based on their PPP loans (if any) during the Covid-19 pandemic:
+
+```
+Index(['RECORD_TYPE', 'DATA_SOURCE', 'RECORD_ID', 'Loan_Range',
+       'BUSINESS_NAME_ORG', 'BUSINESS_ADDR_LINE1', 'BUSINESS_ADDR_CITY',
+       'BUSINESS_ADDR_STATE', 'BUSINESS_ADDR_POSTAL_CODE', 'NAICS_Code',
+       'Business_Type', 'OwnedByRaceEthnicity', 'OwnedBy', 'OwnedByVeteran',
+       'NonProfit', 'JobsReported', 'DateApproved', 'Lender', 'CD'],
+      dtype='object')
+```
+
+Let's take a look at a sample:
+
+```python
+df = sample_df(
+    df_ppp,
+    set([
+        "RECORD_ID",
+        "BUSINESS_NAME_ORG",
+        "BUSINESS_ADDR_LINE1",
+        "Business_Type",
+        "JobsReported",
+    ]),
+)
+
+df.head()
+```
+
+![sample PPP data](img/datasets.ppp_head.png)
+
+Great, we get more info about business types, and we also get new details about employment.
+Both of these could complement the DOL dataset.
+
+Analyzing data values in this sample:
+
+```python
+df.describe().loc[[ "count", "freq", "unique", ]]
+```
+
+![analysis of sample PPP data](img/datasets.ppp_deets.png)
+
+Again, the record IDs are unique and there's overlap among business names and addresses.
+We have 3488 unique records, so not all resolved entities are likely to have PPP data.
+There are 13 different business types, which could also help add structure to our knowledge graph.
+
+Now that we have our three datasets ready, let's load their records into Neo4j.
+First we need to use our credentials -- which were stored in the `.env` local file in our working directory -- to create a GDS connection to our `Senzing` graph database running in Neo4j Desktop:
+
+```python
+dotenv.load_dotenv(dotenv.find_dotenv())
+
+bolt_uri: str = os.environ.get("NEO4J_BOLT")
+username: str = os.environ.get("NEO4J_USER")
+password: str = os.environ.get("NEO4J_PASS")
+
+gds:GraphDataScience = GraphDataScience(
+    bolt_uri,
+    auth = ( username, password, ),
+    aura_ds = False,
+)
+```
+
+To learn more details about using GDS in Python, see its source repo and docs:
+
+  - <https://github.com/neo4j/graph-data-science-client>
+  - <https://neo4j.com/docs/graph-data-science/current/>
+
+Let's define two utility methods to help clean data in our datasets when loading records into Neo4j:
+
+```python
+def get_property_keys (
+    df: pd.DataFrame,
+    ) -> typing.List[ str ]:
+    """
+Convert the column names from the given Pandas dataframe into Cypher property names.
+    """
+    return [
+        name.lower().replace(" ", "_")
+        for name in df.columns.values.tolist()
+    ]
+
+
+def safe_value (
+    obj: typing.Any,
+    ) -> typing.Any:
+    """
+Escape double quotes within string values.
+    """
+    if isinstance(obj, str):
+        return obj.replace('"', "'")
+
+    return obj
+```
+
+Also, we'll define a method to load records from a Pandas dataframe using [Cypher](https://neo4j.com/docs/cypher-manual/current/introduction/):
+
+```python
+def load_records (
+    gds: GraphDataScience,
+    df: pd.DataFrame,
+    ) -> None:
+    """
+Iterate over each Record from one dataset to load using Cypher.
+    """
+    keys: typing.List[ str ] = get_property_keys(df)
+    query: str = """
+WITH toUpper($input.data_source) + "." + toString($input.record_id) as uid
+MERGE (rec:Record { uid: uid })
+  ON CREATE SET rec += $input
+RETURN rec.data_source, rec.record_id
+    """
+
+    for _, row in tqdm(df.iterrows(), desc = "merge record nodes"):
+        safe_vals = [ safe_value(v) for v in row.tolist() ]
+        row_dict: dict = dict(zip(keys, safe_vals))
+        gds.run_cypher(query, input = row_dict)
+```
+
+Now we can load each dataset:
+
+```python
+load_records(gds, df_poi)
+load_records(gds, df_dol)
+load_records(gds, df_ppp)
+```
+
+Boom!
+There are more than 100,000 records represented as nodes in Neo4j.
+However, there are no links between these nodes, and clearly there was overlap among business names and addresses.
+We'll fix that next, then see how this data starts becoming a graph.
+
+Note that the Neo4j node for each loaded record has:
+
+  - a unique ID `uid` which ties back to the input dataset records
+  - a `:Record` label to distinguish from other kinds of nodes
+  - properties to represent other fields from the datasets
 
 
 ## Getting started with Senzing
 
-There are multiple ways to get started with [Senzing entity resolution](https://senzing.com/explore-senzing-entity-resolution/).
-Production use cases typically develop a Java or Python application, calling Senzing running in a container as a microservice.
+Next we'll set up Senzing and load these three datasets, then run _entity resolution_.
 
-For the purposes of illustrating how to integrate Senzing _entity resolution_ and Neo4j _graph databases_ to build _knowledge graphs, we will simply run Senzing on a Linux server in a cloud, then import/export files with the cloud-based server.
-We'll follow steps from the ["Quickstart Guide"](https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide), based on Debian (Ubuntu) Linux.
+There are several convenient ways to get started with [Senzing](https://senzing.com/explore-senzing-entity-resolution/).
+Production use cases typically develop a Java or Python application, which call Senzing running in a container -- as a microservice.
+For the purposes of illustrating how to integrate Senzing _entity resolution_ and Neo4j _graph databases_ to build _knowledge graphs, we will run Senzing on a Linux server in a cloud.
+Then we can import/export files with the cloud-based server.
 
+We'll follow steps from the ["Quickstart Guide"](https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide), based on using Debian (Ubuntu) Linux.
 First, we need to launch a Linux server using one of the popular cloud providers (pick one, any one) which is running an Ubuntu 20.04 LTS server with 4 vCPU and 16 GB memory.
 Be sure to configure enough memory.
 
@@ -224,27 +575,46 @@ wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubun
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 ```
 
-Great, now you're ready to install the Senzing library:
+Now you're ready to install the Senzing library:
 
 ```bash
 sudo apt install senzingapi
 ```
 
-This will be located in the `/opt/senzing/data/current` directory.
+The installation will be located in the `/opt/senzing/data/current` directory.
+Senzing is good to go!
 
-Next, create a project named `~/senzing` in your user home directory, then set up its configuration:
+Next, we'll use a sample data loader for Senzing called `G2Loader` which is written in Python.
+This application calls the Senzing APIs, the same APIs you would use in production use cases.
+Check the code if you're curious about its details, and see other examples at <https://github.com/Senzing/code-snippets/tree/main/Python/Tasks/Loading> on GitHub.
+
+Let's create a project for `G2Loader` named `~/senzing` in your user home directory:
 
 ```bash
 python3 /opt/senzing/g2/python/G2CreateProject.py ~/senzing
 cd ~/senzing
+```
+
+Load credentials into your environment variables, then set up the configuration:
+
+```bash
 source setupEnv
 ./python/G2SetupConfig.py
 ```
 
-Upload our three datasets
+Next we need to upload the three datasets to the cloud server.
+For example, we might transfer these files through a bucket in the cloud provider's storage grid.
+For this tutorial, we've place these files into the `lv_data` subdirectory:
 
+```bash
+(venv) (base) demo:~/senzing$ ls -lth lv_data/
+total 132024
+-rw-r--r--@ 1 demo  staff    63M Mar  6 12:45 poi.json
+-rw-r--r--@ 1 demo  staff   783K Jan 16 08:20 ppp.csv
+-rw-r--r--@ 1 demo  staff   633K May 30  2023 dol.csv
+```
 
-Prepare to load our three datasets into Senzing as data sources:
+Next, prepare to load these three datasets as Senzing _data sources_:
 
 ```bash
 ./python/G2ConfigTool.py
@@ -256,7 +626,11 @@ Prepare to load our three datasets into Senzing as data sources:
 	+ quit
 ```
 
-We'll specify using up to 16 threads, to parallelize the input process:
+It may be simpler to run the `./python/G2ConfigTool.py` configuration tool, then type the commands shown above at its command prompt.
+
+Now we're ready to run Senzing _entity resolution_.
+We'll specify using up to 16 threads, to parallelize the input process.
+That way the following steps take advantage of our multiple CPU cores and complete within just a few minutes:
 
 ```bash
 ./python/G2Loader.py -f lv_data/poi.json -nt 16
@@ -264,19 +638,104 @@ We'll specify using up to 16 threads, to parallelize the input process:
 ./python/G2Loader.py -f lv_data/ppp.csv -nt 16
 ```
 
-Finally, export the resolved entities as the `export.json` local file:
+The resolved entities (i.e., the results) can now be exported to a JSON file using one line:
 
 ```bash
 ./python/G2Export.py -F JSON -o export.json
 ```
 
-  	2. Set up and configure on a Linux server
-	3. Load the datasets
-	4. Run entity resolution, explore within Senzing
-	5. Export JSON, linking entities and component records
+To explore these results manually, note that the JSON export file has one dictionary per line.
+For example, we could run a simple command line pipe to "pretty-print" the first resolved entity:
+
+```bash
+cat export.json | head -1 | python3 -m json.tool
+```
+
+We won't print the full details here, but the output should start with something much like...
+
+```
+{
+    "RESOLVED_ENTITY": {
+        "ENTITY_ID": 1,
+        "RECORDS": [
+            {
+                "DATA_SOURCE": "DOL_WHISARD",
+                "RECORD_ID": "7789",
+                "ENTITY_TYPE": "GENERIC",
+                "INTERNAL_ID": 1328,
+                "ENTITY_KEY": "84B0FE54ABABC1479B05AB982D9046EBED1C71DE",
+                "ENTITY_DESC": "Flamingo Las Vegas Operating Company LLC",
+                "MATCH_KEY": "",
+                "MATCH_LEVEL": 0,
+                "MATCH_LEVEL_CODE": "",
+                "ERRULE_CODE": "",
+                "LAST_SEEN_DT": "2024-03-12 18:22:48.147"
+            },
+```
+
+Now transfer the `export.json` local file from the cloud server back to your desktop/laptop and move it into the working directory.
+
+Done and done!
+That was quick.
 
 
-## Examine the results
+## Build a knowledge graph
+
+Now return to your Jupyter browser tab and open the `results.ipynb` notebook.
+Again, we need to import Python library dependencies:
+
+```python
+from dataclasses import dataclass, field
+import json
+import os
+import pathlib
+import sys
+import typing
+
+from graphdatascience import GraphDataScience 
+from icecream import ic
+from tqdm import tqdm
+import dotenv
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import watermark
+
+%load_ext watermark
+```
+
+Then check the watermark trace:
+
+```python
+%watermark
+%watermark --iversions
+```
+
+Watermark results should look like:
+
+```
+Last updated: 2024-03-26T23:34:01.593352-07:00
+
+Python implementation: CPython
+Python version       : 3.11.0
+IPython version      : 8.22.2
+
+Compiler    : Clang 13.0.0 (clang-1300.0.29.30)
+OS          : Darwin
+Release     : 21.6.0
+Machine     : x86_64
+Processor   : i386
+CPU cores   : 8
+Architecture: 64bit
+
+pandas    : 2.2.1
+json      : 2.0.9
+watermark : 2.4.3
+matplotlib: 3.8.3
+sys       : 3.11.0 (v3.11.0:deaf509e8f, Oct 24 2022, 14:43:23) [Clang 13.0.0 (clang-1300.0.29.30)]
+seaborn   : 0.13.2
+```
+
 
 > pull markdown+images from `results.ipynb`
 
@@ -302,10 +761,9 @@ TBD
 
 
 ## Summary
-(**Report**)
 
-    1. Mention popular needs for this kind of work, e.g., GraphRAG
+    1. Describe popular needs for this kind of work with KGs, e.g., using GraphRAG in AI:
 		- <https://neo4j.com/developer-blog/knowledge-graph-rag-application/>
 	2. Next steps...
-		- <https://graphacademy.neo4j.com/> 
-		- Senzing follow-ups
+		- Neo4j follow-ups <https://graphacademy.neo4j.com/> 
+		- Senzing follow-ups ???
