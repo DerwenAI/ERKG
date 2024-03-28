@@ -105,10 +105,9 @@ You'll also need to select a version -- we'll use 5.17.0 which is recent at the 
 ![Neo4j Desktop application window](img/neo4j_desktop.png)
 
 Click on the newly created database, then a right side panel will show settings and administrative links -- as shown in the "Neo4j Desktop" figure.
-Click on the `Plugin` link, open the `Graph Data Science Library` drop-down, then install this plugin.
-We'll use the GDS library to access the Neo4j graph database through Python.
+Click on the `Plugin` link, open the `Graph Data Science Library` drop-down, then [install this plugin](https://neo4j.com/docs/graph-data-science/current/installation/neo4j-desktop/).
 
-Click on the reset button, next to `Stop` -- or simply stop the database, then start it again.
+Click on the `Start` button.
 Your GDS plugin will be in place, and local service endpoints for accessing the graph database should be ready.
 Now click on the `Details` link and find the port number for the [Bolt protocol](https://neo4j.com/docs/bolt/current/bolt/).
 In our example `7687` is the Bolt port number.
@@ -129,6 +128,7 @@ After connecting into your working directory, create a file called `.env` which 
 
 ```
 NEO4J_BOLT=bolt://localhost:7687
+NEO4J_DBMS=neo4j
 NEO4J_USER=neo4j
 NEO4J_PASS=Z1ngs3n!
 ```
@@ -138,7 +138,11 @@ You can also export and import "dumps" of your database on disk, to manage backu
 
 Neo4j is good to go!
 For the rest of this tutorial, keep this Neo4j Desktop application running in the background.
-Even so, mostly we will access Neo4j through the [GDS library](https://neo4j.com/docs/graph-data-science/current/installation/neo4j-desktop/) using Python code.
+We'll access it through the Graph Data Science (GDS) library using Python code.
+To learn more about GDS, see its source repo and docs:
+
+  - <https://github.com/neo4j/graph-data-science-client>
+  - <https://neo4j.com/docs/graph-data-science/current/>
 
 
 ## The input datasets
@@ -160,7 +164,6 @@ python3 -m pip install -r requirements.txt
 This tutorial uses several popular libraries which are common in data science work:
 
 ```
-icecream >= 2.1
 ipywidgets >= 8.1
 jupyterlab >= 4.1
 jupyterlab_execute_time >= 3.1
@@ -187,11 +190,14 @@ First we need to import the Python library dependencies required for the code we
 
 ```python
 import json
+import os
 import pathlib
 import sys
 import typing
 
 from graphdatascience import GraphDataScience
+from tqdm import tqdm
+import dotenv
 import pandas as pd
 import watermark
 
@@ -199,7 +205,7 @@ import watermark
 ```
 
 The `graphdatascience` import loads the GDS library for Neo4j.
-This will work alongside the [`pandas`](https://pandas.pydata.org/) library to do the heavy-lifting in this part of the tutorial.
+This works alongside the [`pandas`](https://pandas.pydata.org/) library for the heavy-lifting in our tutorial.
 
 Let's double-check the [watermark](https://github.com/rasbt/watermark) trace, in case anyone needs to troubleshoot dependencies on their system:
 
@@ -459,20 +465,20 @@ First we need to use our credentials -- which were stored in the `.env` local fi
 dotenv.load_dotenv(dotenv.find_dotenv())
 
 bolt_uri: str = os.environ.get("NEO4J_BOLT")
+database: str = os.environ.get("NEO4J_DBMS")
 username: str = os.environ.get("NEO4J_USER")
 password: str = os.environ.get("NEO4J_PASS")
 
 gds:GraphDataScience = GraphDataScience(
     bolt_uri,
     auth = ( username, password, ),
+    database = database,
     aura_ds = False,
 )
 ```
 
-To learn more details about using GDS in Python, see its source repo and docs:
-
-  - <https://github.com/neo4j/graph-data-science-client>
-  - <https://neo4j.com/docs/graph-data-science/current/>
+Don't worry if you get a `"Failed to write data to connection..."` error.
+It's spurious here.
 
 To prepare to add structure to our graph, by adding [_constraints_](https://neo4j.com/docs/cypher-manual/current/constraints/) to ensure uniqueness of records and entities, where we expect uniqueness.
 
@@ -511,15 +517,33 @@ def safe_value (
     """
 Escape double quotes within string values.
     """
+    if pd.isna(obj):
+    	return None
+
     if isinstance(obj, str):
         return obj.replace('"', "'")
 
     return obj
 ```
 
-Also, we'll define a method to load records from a Pandas dataframe using [Cypher](https://neo4j.com/docs/cypher-manual/current/introduction/):
+Also, we'll define means to load records from a Pandas dataframe using [Cypher](https://neo4j.com/docs/cypher-manual/current/introduction/):
 
 ```python
+def get_param_list (
+    params: dict,
+    ) -> str:
+    """
+Format the properties to set.
+    """
+    param_list: str = ", ".join([
+        f"{key}: ${key}"
+        for key in params.keys()
+        if key != "uid"
+    ])
+
+    return "{" + param_list + "}"
+
+
 def load_records (
     gds: GraphDataScience,
     df: pd.DataFrame,
@@ -528,18 +552,20 @@ def load_records (
 Iterate over each Record from one dataset to load using Cypher.
     """
     keys: typing.List[ str ] = get_property_keys(df)
-    query: str = """
-WITH toUpper($input.data_source) + "." + toString($input.record_id) as uid
-MERGE (rec:Record { uid: uid })
-  ON CREATE SET rec += $input
-RETURN rec.data_source, rec.record_id
-    """
 
     for _, row in tqdm(df.iterrows(), desc = "merge record nodes"):
         safe_vals = [ safe_value(v) for v in row.tolist() ]
-        row_dict: dict = dict(zip(keys, safe_vals))
-        gds.run_cypher(query, input = row_dict)
-```
+        params: dict = dict(zip(keys, safe_vals))
+        params["uid"] = params["data_source"].upper() + "." + str(params["record_id"])
+        param_list: str = get_param_list(params)
+
+        query: str = f"""
+MERGE (rec:Record {{ uid: $uid }})
+  ON CREATE SET rec += {param_list}
+RETURN rec.data_source, rec.record_id
+    """
+
+        gds.run_cypher(query, params)```
 
 Now we can load each dataset:
 
@@ -712,7 +738,6 @@ import sys
 import typing
 
 from graphdatascience import GraphDataScience 
-from icecream import ic
 from tqdm import tqdm
 import dotenv
 import matplotlib.pyplot as plt
@@ -787,7 +812,7 @@ with export_path.open() as fp:
         entity_id: int = entity_dat["RESOLVED_ENTITY"]["ENTITY_ID"]
 
         records: set = set([
-            ".".join([ r["DATA_SOURCE"], r["RECORD_ID"] ]).upper()
+            ".".join([ r["DATA_SOURCE"].upper(), str(r["RECORD_ID"]) ])
             for r in entity_dat["RESOLVED_ENTITY"]["RECORDS"]
         ])
 
@@ -821,15 +846,26 @@ Looking at one of these parsed entity records...
  'RELATED_ENTITIES': []}
 ```
 
-...we have entity and record IDs, so we can link these as relations in the graph data.
+To finish preparing the input data for resolved entities, let's make a quick traversal of the record linkage and set a flag for "interesting" entities which will have relations in the graph to visualize.
+
+```python
+for entity in entities.values():
+    if entity.num_recs > 0:
+        entity.has_ref = True
+
+    for rel_ent_id in entity.related:
+        entities[rel_ent_id].has_ref = True
+```
+
+Now we have unique IDs for entities and records, so we can link these as relations in the graph data.
 We've also got interesting info about how the record matches were determined, which could be used as properties on the graph relations.
 
 Again, we run code to create a GDS connection to our Neo4j graph database.
-At this point it's relatively simple to load the entities as nodes:
+Then it's relatively simple to load the entities as nodes:
 
 ```python
 query: str = """
-MERGE (ent:Entity {uid: $params.uid, has_ref: $params.has_ref})
+MERGE (ent:Entity {uid: $uid, has_ref: $has_ref})
 """
 
 for entity in tqdm(entities.values(), desc = "merge entity nodes"):
@@ -838,10 +874,7 @@ for entity in tqdm(entities.values(), desc = "merge entity nodes"):
         "has_ref": entity.has_ref,
     }
 
-    gds.run_cypher(
-         query,
-         input = params,
-    )
+    gds.run_cypher(query, params = params)
 ```
 
 Now we'll connect each entity with its resolved records:
@@ -849,8 +882,8 @@ Now we'll connect each entity with its resolved records:
 ```python
 query = """
 MATCH
-    (ent:Entity {uid: $params.entity_uid}),
-    (rec:Record {uid: $params.record_uid})       
+    (ent:Entity {uid: $entity_uid}),
+    (rec:Record {uid: $record_uid})       
 MERGE (ent)-[:RESOLVES]->(rec)
 """
 
@@ -861,7 +894,7 @@ for entity in tqdm(entities.values(), desc = "merge ent->rec"):
             "record_uid": record_uid,
         }
 
-        gds.run_cypher(query, input = params)
+        gds.run_cypher(query, params = params)
 ```
 
 Similarly, we'll connect each entity with its related entities, if any:
@@ -869,9 +902,9 @@ Similarly, we'll connect each entity with its related entities, if any:
 ```python
 query = """
 MATCH
-    (ent:Entity {uid: $params.entity_uid}),
-    (rel_ent:Entity {uid: $params.rel_ent})       
-MERGE (ent)-[:RELATED {ambiguous: $params.ambiguous, disclosed: $params.disclosed, match_key: $params.match_key, match_level: $params.match_level, match_level_code: $params.match_level_code}]->(rel_ent)
+    (ent:Entity {uid: $entity_uid}),
+    (rel_ent:Entity {uid: $rel_ent})       
+MERGE (ent)-[:RELATED {ambiguous: $ambiguous, disclosed: $disclosed, match_key: $match_key, match_level: $match_level, match_level_code: $match_level_code}]->(rel_ent)
 """
 
 for entity in tqdm(entities.values(), desc = "merge ent->rel"):
@@ -886,7 +919,7 @@ for entity in tqdm(entities.values(), desc = "merge ent->rel"):
             "match_level_code": rel_ent["MATCH_LEVEL_CODE"],
         }
 
-        gds.run_cypher(query, input = params)
+        gds.run_cypher(query, params = params)
 ```
 
 Now let's look at the _schema_ which we've built so far in our graph database -- in other words, the structure of our KG so far.
