@@ -722,6 +722,9 @@ Now transfer the `export.json` local file from the cloud server back to your des
 
 Done and done!
 That was quick.
+To launch a cloud server, install Senzing, load three datasets, run entity resolution, then download results: less than one hour.
+This cost a total of $0.13 to run.
+Of course, you could simply run a Docker container locally to have Senzing as a microservice – but there’s so much less to observe and discuss.
 
 
 ## Build a knowledge graph
