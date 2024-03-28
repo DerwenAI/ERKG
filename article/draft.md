@@ -120,7 +120,7 @@ Next, open a browser window to our GitHub public repo for this tutorial:
 Clone the repo by copying its URL from GitHub, as shown in the "Clone public repo" figure.
 Then use the following steps to create your **working directory** on your desktop/laptop for this tutorial:
 
-```
+```bash
 git clone https://github.com/Senzing/ERKG.git
 cd ERKG
 ```
@@ -143,22 +143,21 @@ Even so, mostly we will access Neo4j through the [GDS library](https://neo4j.com
 
 ## The input datasets
 
-[ pull markdown+images from `datasets.ipynb` ]
-
 We'll be working with three datasets to run entity resoultion and build a knowledge graph.
-To start, let's set up a Python environment and install the libraries we'll need, then run code examples inside a [Jupyter](https://jupyter.org/) notebook.
-We show use of Python 3.11 here, although other recent versions should well too.
+To start, let's set up a Python environment and install the libraries we'll need.
+Then we can run code examples inside [Jupyter](https://jupyter.org/) notebooks.
+We show use of Python 3.11 here, although other recent versions of Python should well too.
 
 Set up a virtual environment for Python and load the required dependencies:
 
-```
+```bash
 python3.11 -m venv venv
 source venv/bin/activate
 python3 -m pip install -U pip wheel setuptools
 python3 -m pip install -r requirements.txt
 ```
 
-This tutorial uses several popular libraries that are common in data science work:
+This tutorial uses several popular libraries which are common in data science work:
 
 ```
 icecream >= 2.1
@@ -173,8 +172,16 @@ tqdm >= 4.66
 watermark >= 2.4
 ```
 
-Now run the 
+Now launch Jupyter and run the `datasets.ipynb` notebook:
 
+```bash
+./venv/bin/jupyter lab
+```
+
+JupyterLab should automagically open in your browser.
+Otherwise, open <http://localhost:8888/lab> in a new browser tab.
+
+> pull markdown+images from `datasets.ipynb`
 
 	1. Set up env for Python, Jupyter, Neo4j, etc.
 	2. Link to sources: SafeGraph POI, DoL WHISARD, SBA PPP
@@ -188,18 +195,18 @@ Now run the
 	5. Load records into Neo4j `:Record`​ nodes/props
 
 
-## Using Senzing
-(**Cloud**)
+## Getting started with Senzing
 
-  	1. Point to docs, API, etc.
-  	2. Set up and configure on a Linux server
-	3. Load the datasets
-	4. Run entity resolution, explore within Senzing
-	5. Export JSON, linking entities and component records
+There are multiple ways to get started with [Senzing entity resolution](https://senzing.com/explore-senzing-entity-resolution/).
+Production use cases typically develop a Java or Python application, calling Senzing running in a container as a microservice.
 
-Launch a Linux server running Ubuntu 20.04 LTS server with 4 vCPU, 16 GB memory.
+For the purposes of illustrating how to integrate Senzing _entity resolution_ and Neo4j _graph databases_ to build _knowledge graphs, we will simply run Senzing on a Linux server in a cloud, then import/export files with the cloud-based server.
+We'll follow steps from the ["Quickstart Guide"](https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide), based on Debian (Ubuntu) Linux.
 
-See: <https://senzing.zendesk.com/hc/en-us/articles/115002408867-Quickstart-Guide>
+First, we need to launch a Linux server using one of the popular cloud providers (pick one, any one) which is running an Ubuntu 20.04 LTS server with 4 vCPU and 16 GB memory.
+Be sure to configure enough memory.
+
+Now download the Senzing installer image and run it:
 
 ```bash
 wget https://senzing-production-apt.s3.amazonaws.com/senzingrepo_1.0.1-1_amd64.deb
@@ -208,21 +215,24 @@ sudo apt update
 sudo apt upgrade
 ```
 
-Depending on the Linux distribution, this may require installing `libssl1.1` as well, which is described in
-<https://stackoverflow.com/questions/73251468/e-package-libssl1-1-has-no-installation-candidate>:
+Depending on your Linux distribution and version, the last two steps may require installing `libssl1.1` before they can run correctly.
+Most definitely, `apt` will let you know through error messages if this is the case!
+Instructions are described in the <https://stackoverflow.com/questions/73251468/e-package-libssl1-1-has-no-installation-candidate> question/answer on StackOverflow:
 
 ```bash
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 ```
 
-Then install Senzing, which will be located in the `/opt/senzing/data/current` directory:
+Great, now you're ready to install the Senzing library:
 
 ```bash
 sudo apt install senzingapi
 ```
 
-Now create a project `~/senzing` in the current user's home directory and set up its configuration:
+This will be located in the `/opt/senzing/data/current` directory.
+
+Next, create a project named `~/senzing` in your user home directory, then set up its configuration:
 
 ```bash
 python3 /opt/senzing/g2/python/G2CreateProject.py ~/senzing
@@ -230,6 +240,9 @@ cd ~/senzing
 source setupEnv
 ./python/G2SetupConfig.py
 ```
+
+Upload our three datasets
+
 
 Prepare to load our three datasets into Senzing as data sources:
 
@@ -257,11 +270,15 @@ Finally, export the resolved entities as the `export.json` local file:
 ./python/G2Export.py -F JSON -o export.json
 ```
 
+  	2. Set up and configure on a Linux server
+	3. Load the datasets
+	4. Run entity resolution, explore within Senzing
+	5. Export JSON, linking entities and component records
+
 
 ## Examine the results
-(**Jupyter**)
 
-pull from `2.results.ipynb`
+> pull markdown+images from `results.ipynb`
 
     1. Load entities into Pandas, run light summary analysis
     2. Use the GDS wrapper over the Neo4j driver in Python
@@ -277,7 +294,8 @@ pull from `2.results.ipynb`
 
 
 ## What's difficult to obtain without a graph database?
-(**Jupyter**)
+
+TBD
 
     1. SafeGraph POI has business categories and NAICS codes – natural links and taxonomy for adding more relations to the KG, to build structure
     2. Use geo coordinates to visualize map as a quick example use case

@@ -1,6 +1,7 @@
 # local files
 .env
 *~
+dl/
 lv_data/
 export.json
 
