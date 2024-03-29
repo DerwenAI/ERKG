@@ -943,11 +943,11 @@ linked these records.
 Let's repeat the following _graph data science_ sequence of steps to explore linking:
 
   - run a Cypher query in Neo4j using GDS
-  - produce query results as Pandas dataframes
-  - use [Seaborn](https://seaborn.pydata.org/) to visualize the dataframe results
+  - collect query results as Pandas dataframes
+  - use [Seaborn](https://seaborn.pydata.org/) to visualize the dataframes
 
 ```python
-df = gds.run_cypher(
+df_rel = gds.run_cypher(
   """
 MATCH (ent:Entity)
 RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RELATED]->(:Entity) } as num_rel
@@ -955,23 +955,32 @@ ORDER BY num_rel DESC
   """
 )
 
+df_rel_avg = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN ent.uid, COUNT { (ent)-[:RELATED]->(:Entity) } as num_rel
+  """
+)
+
 fig, ax = plt.subplots()
 plt.rcParams["font.family"] = "sans-serif"
 
-y = sns.lineplot(df, y = "count_ent", x = "num_rel")
+y = sns.barplot(df_rel, y = "count_ent", x = "num_rel")
 y.tick_params(axis = "y", size = 9, colors = "gray")
+y.bar_label(y.containers[0], padding = 3, color = "gray", fontsize = 7)
 
 plt.xlabel("related entities per entity", size = 10, fontstyle = "italic")
 plt.ylabel("entity count", size = 10, fontstyle = "italic")
+plt.axvline(x = df_rel_avg["num_rel"].mean(), color = "red")
 
 sns.despine(bottom = True, left = True)
 plt.yscale("log")
 ```
 
-![plot: entities count vs. related entities per entity](img/graphs.plot.ent_rel.png)
+![histogram: entities count vs. related entities per entity](img/graphs.plot.ent_rel.png)
 
 ```python
-df = gds.run_cypher(
+df_rec = gds.run_cypher(
   """
 MATCH (ent:Entity)
 RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
@@ -979,15 +988,23 @@ ORDER BY num_rec DESC
   """
 )
 
+df_rec_avg = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN ent.uid, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
+  """
+)
+
 fig, ax = plt.subplots()
 plt.rcParams["font.family"] = "sans-serif"
 
-y = sns.barplot(df, y = "count_ent", x = "num_rec")
+y = sns.barplot(df_rec, y = "count_ent", x = "num_rec")
 y.tick_params(axis = "y", size = 9, colors = "gray")
-y.bar_label(y.containers[0], padding = 3, color = "black", fontsize = 11)
+y.bar_label(y.containers[0], padding = 3, color = "gray", fontsize = 7)
 
 plt.xlabel("records per entity", size = 10, fontstyle = "italic")
 plt.ylabel("entity count", size = 10, fontstyle = "italic")
+plt.axvline(x = df_rec_avg["num_rec"].mean(), color = "red")
 
 sns.despine(bottom = True, left = True)
 plt.yscale("log")
@@ -996,22 +1013,20 @@ plt.yscale("log")
 ![histogram: entities count vs. records per entity](img/graphs.plot.ent_rec.png)
 
 On average, each entity has more than 2 records linked.
-One of them has 15 records!
-Imagine if you'd been `"Robert Smith"` with 15 dopplegangers out there in the Las Vegas municial records?
+Some of them have more than 30 records!
 
-But we can do better.
 Let's use the [PyVis](https://pyvis.readthedocs.io/en/latest/) library in Python to visualize relations in our KG.
 In other words, we'll visualize the knowledge graph to illustrate how much convergence of dataset records we achieved through entity resolution:
 
 ```python
-df = gds.run_cypher(
+df_link = gds.run_cypher(
   """
 MATCH (ent:Entity)-[:RESOLVES]->(rec:Record)
 RETURN ent.uid AS ent_uid, rec.uid AS rec_uid, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
   """
 )
 
-df_linked = df[df["num_rec"] > 1]
+df_link = df_link.loc[df_link["num_rec"] > 1]
 
 net: pyvis.network.Network = pyvis.network.Network(notebook = True)
 
@@ -1024,7 +1039,7 @@ net.show("vegas.1.html")
 
 ![network: unlinked records](img/vegas.1.png)
 
-This shows just the records from the three datasets, loaded into Neo4j.
+This visualization shows just the records from the three datasets, loaded into Neo4j.
 It's not really a graph yet, because it doesn't have any links.
 
 ```python

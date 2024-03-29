@@ -16,8 +16,13 @@ python3 -m pip install -r requirements.txt
 
 ## Run demo
 
+See the tutorial in `article/draft.md` and run:
+
 ```bash
 ./venv/bin/jupyter lab
 ```
 
-Then open the `demo.ipynb` notebook.
+Then open the notebook:
+
+  1. `examples/datasets.ipynb`
+  2. `examples/graph.ipynb`
