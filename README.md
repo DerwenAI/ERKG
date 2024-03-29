@@ -34,7 +34,7 @@ you need to make sure the entities in your graph get resolved correctly.
 Otherwise, your AI app downstream will struggle with the kinds of details
 that make people get concerned, very concerned, very quickly:
 e.g., billing, deliveries, voter registration, crucial medical details,
-credit reporting, and so on.
+credit reporting, industrial safety, security, and so on.
 
 Recommended study:
   - ["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023)
