@@ -56,7 +56,10 @@ Cloud computing budget: running Senzing in this tutorial cost a total
 of $0.13 USD.
 
 
-## Set up environment
+## Set up local environment
+
+After cloning this repo, connect into the `ERKG` directory and set up
+your local environment:
 
 ```bash
 python3.11 -m venv venv
@@ -65,8 +68,11 @@ python3 -m pip install -U pip wheel setuptools
 python3 -m pip install -r requirements.txt 
 ```
 
+Here we're using Python 3.11 although this code should run with most
+of the recent Python 3.x versions.
 
-## Run the tutorial
+
+## Run the tutorial notebooks
 
 First, launch Jupyter:
 
