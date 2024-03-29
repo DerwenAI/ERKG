@@ -62,7 +62,8 @@ these notebooks:
 
 You can view results --
 an interactive visualization of the entity resolved knowledge graph --
-by loading `examples/big_vegas.2.html` in a browser.
+by loading [`examples/big_vegas.2.html`](examples/big_vegas.2.html)
+in a web browser.
 The full HTML+JavaScript is large and may take several minutes to load.
 
 
