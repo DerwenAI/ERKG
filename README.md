@@ -2,13 +2,13 @@
 
 This hands-on tutorial in Python demonstrates integration of
 [Senzing](https://github.com/Senzing) and [Neo4j](https://github.com/neo4j)
-to construct an _Entity Resolved Knowledge Graph_.
+to construct an _Entity Resolved Knowledge Graph_:
 
   1. Use three datasets describing businesses in Las Vegas: ~100K records, 4% duplicates.
   2. Run _entity resolution_ in Senzing to resolve duplicate business names and addresses.
   3. Parse results to construct a _knowledge graph_ in Neo4j.
 
-We'll show examples based on using Neo4j Desktop and the
+We'll walk through example code based on Neo4j Desktop and the
 [_Graph Data Science_](https://github.com/neo4j/graph-data-science-client)
 (GDS) library to run Cypher queries on the graph,
 preparing data for downstream analysis and visualizations with
@@ -28,11 +28,13 @@ When the entities, relations, and properties in a KG leverage your
 domain-specific data to strengthen your AI app ... compliance issues
 and audits rush to the foreground.
 
-TL;DR: during the transition from data integration to KG construction,
+TL;DR: sense-making of the data from a connected world.
+During the transition from data integration to KG construction,
 you need to make sure the entities in your graph get resolved correctly.
 Otherwise, your AI app downstream will struggle with the kinds of details
 that make people get concerned, very concerned, very quickly:
-e.g., deliveries, voter registration, crucial medical details, credit reporting, and so on.
+e.g., billing, deliveries, voter registration, crucial medical details,
+credit reporting, and so on.
 
 Recommended study:
   - ["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023)
@@ -49,6 +51,8 @@ You will need to have familiarity with how to:
   - launch a server in the cloud
   - use Linux command lines
   - write some code in Python
+
+In terms of cloud computing budget, this tutorial cost $0.13 total.
 
 
 ## Set up environment
