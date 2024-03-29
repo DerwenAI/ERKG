@@ -1,8 +1,9 @@
 # senzing_neo4j
 
-Demonstrate an integration of Senzing and Neo4j, using _entity resolution_
-in Senzing to resolve the business names and addresses for three datasets,
-then construct a _knowledge graph_ in Neo4j from the results.
+Demonstrate integration of Senzing and Neo4j: use _entity resolution_
+in Senzing to resolve duplicate business names and addresses in the
+Las Vegas metropolitan area from three datasets.
+Then construct a _knowledge graph_ in Neo4j from these results.
 
 
 ## Set up environment
@@ -16,13 +17,13 @@ python3 -m pip install -r requirements.txt
 
 ## Run demo
 
-See the tutorial in `article/draft.md` and run:
+See the tutorial in `article/draft.md` and launch Jupyter:
 
 ```bash
 ./venv/bin/jupyter lab
 ```
 
-Then open the notebook:
+Then open the notebooks:
 
   1. `examples/datasets.ipynb`
   2. `examples/graph.ipynb`
