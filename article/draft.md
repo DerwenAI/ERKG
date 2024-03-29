@@ -1042,15 +1042,10 @@ net.show("vegas.2.html")
 ![network: entities linked with records](img/vegas.2.png)
 
 Et voilà – our graph begins to emerge!
-Notice the 15 doppelgangers of our old friend Robert?
+Notice the clusters, some of which have 30+ records linked to the same entity.
+Let’s zoom into the bottom/center:
 
-
-## What's tough to get without a graph database?
-
-TBD
-
-    1. SafeGraph POI has business categories and NAICS codes – natural links and taxonomy for adding more relations to the KG, to build structure
-    2. Use geo coordinates to visualize map as a quick example use case
+![network: zoom into record linking](img/vegas.3.png)
 
 
 ## Summary
