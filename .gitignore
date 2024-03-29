@@ -4,6 +4,7 @@
 dl/
 lv_data/
 export.json
+article/before_after.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

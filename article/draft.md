@@ -6,7 +6,7 @@ This article provides a hands-on tutorial to get started running both [Senzing](
 We'll begin with three datasets, clean up entities in the data, and finally build a knowledge graph from the results.
 The code shown here is intended to be simple to download, easy to follow, and presented so you can also try it with your own data.
 
-![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](img/before_after.png)
+![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](before_after.png)
 
 In this tutorial we'll be working in two environments which require some hands-on configuration and coding.
 The examples show code at level which should be fine for most anyone working in data science.
