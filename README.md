@@ -52,7 +52,8 @@ You will need to have familiarity with how to:
   - use Linux command lines
   - write some code in Python
 
-In terms of cloud computing budget, this tutorial cost $0.13 total.
+Cloud computing budget: running Senzing in this tutorial cost a total
+of $0.13 USD.
 
 
 ## Set up environment
