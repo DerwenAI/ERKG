@@ -9,7 +9,7 @@ to construct an _Entity Resolved Knowledge Graph_:
   3. Parse results to construct a _knowledge graph_ in Neo4j.
 
 We'll walk through example code based on Neo4j Desktop and the
-[_Graph Data Science_](https://github.com/neo4j/graph-data-science-client)
+[Graph Data Science](https://github.com/neo4j/graph-data-science-client)
 (GDS) library to run Cypher queries on the graph,
 preparing data for downstream analysis and visualizations with
 [Jupyter](https://jupyter.org/),
@@ -88,10 +88,10 @@ First, launch Jupyter:
 Then, based on the `article/draft.md` tutorial, follow steps shown in
 these notebooks:
 
-  1. `examples/datasets.ipynb`
-  2. `examples/graph.ipynb`
+  1. [`examples/datasets.ipynb`](examples/datasets.ipynb)
+  2. [`examples/graph.ipynb`](examples/graph.ipynb)
 
-You can view results --
+You can view the results --
 an interactive visualization of the entity resolved knowledge graph --
 by loading [`examples/big_vegas.2.html`](examples/big_vegas.2.html)
 in a web browser.
