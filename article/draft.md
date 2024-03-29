@@ -3,18 +3,19 @@
 ## Introduction
 
 This article provides a hands-on tutorial to get started running both [Senzing](https://senzing.com/) for _entity resolution_ and [Neo4j](https://neo4j.com/) for _knowledge graphs_, working in Python code.
-We'll begin with three datasets, clean up entities in the data, and finally build a knowledge graph from the results.
+We'll begin with three datasets, clean up entities in the data, then build a knowledge graph from the results.
 The code shown here is intended to be simple to download, easy to follow, and presented so you can also try it with your own data.
 
 ![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](before_after.png)
 
-In this tutorial we'll be working in two environments which require some hands-on configuration and coding.
-The examples show code at level which should be fine for most anyone working in data science.
-You need to have some familiarity with each of the following:
+In this tutorial we'll work in two environments.
+The configuration and coding is at level which should be comfortable for most people working in data science.
+You need to have some familiarity with how to:
 
-  - simple Python programming
-  - using a Linux command line
-  - cloning a public repo from GitHub
+  - clone a public repo from GitHub
+  - launch a server in the cloud
+  - use Linux command lines
+  - write some code in Python
 
 Although _knowledge graphs_ (KGs) have been around for many years, there's been lots of recent interest due to uses with AI. For example, it turns out that KGs are super helpful to "ground" the prompts and results of chatbots, to reduce "hallucination" errors in AI models.
 
