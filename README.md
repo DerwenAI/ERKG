@@ -62,7 +62,7 @@ After cloning this repo, connect into the `ERKG` directory and set up
 your local environment:
 
 ```bash
-https://github.com/DerwenAI/ERKG.git
+git clone https://github.com/DerwenAI/ERKG.git
 cd ERKG
 
 python3.11 -m venv venv
@@ -72,7 +72,7 @@ python3 -m pip install -U pip wheel setuptools
 python3 -m pip install -r requirements.txt 
 ```
 
-Here we're using Python 3.11 although this code should run with most
+We're using Python 3.11 here, although this code should run with most
 of the recent Python 3.x versions.
 
 
