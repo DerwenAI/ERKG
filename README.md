@@ -2,8 +2,7 @@
 
 This hands-on tutorial in Python demonstrates integration of
 [Senzing](https://github.com/Senzing) and [Neo4j](https://github.com/neo4j)
-to construct an
-[_Entity Resolved Knowledge Graph_](https://senzing.com/analytics-entity-resolved-knowledge-graphs/).
+to construct an _Entity Resolved Knowledge Graph_.
 
   1. Use three datasets describing businesses in Las Vegas: ~100K records, 4% duplicates.
   2. Run _entity resolution_ in Senzing to resolve duplicate business names and addresses.
@@ -11,8 +10,8 @@ to construct an
 
 We'll show examples based on using Neo4j Desktop and the
 [_Graph Data Science_](https://github.com/neo4j/graph-data-science-client)
-(GDS) library to run Cypher queries on the graph, 
-then run analysis and visualizations with
+(GDS) library to run Cypher queries on the graph,
+preparing data for downstream analysis and visualizations with
 [Pandas](https://pandas.pydata.org/),
 [Seaborn](https://seaborn.pydata.org/),
 [PyVis](https://pyvis.readthedocs.io/en/latest/).
@@ -21,6 +20,22 @@ The code is simple to download and easy to follow, and presented so
 you can try it with your own data.
 
 ![Before and After](article/img/before_after.png)
+
+Why?
+For one example, popular use of _retrieval augmented generation_ (RAG)
+to make AI applications more robust has boosted recent interest in KGs.
+When the entities, relations, and properties in a KG leverage your
+domain-specific data to strengthen your AI app ... compliance issues
+and audits rush to the foreground.
+
+TL;DR: during the transition from data integration to KG construction,
+you need to make sure the entities in your graph get resolved correctly.
+Otherwise, your AI app downstream will struggle with the kinds of details
+that make people get concerned, very concerned, very quickly:
+e.g., deliveries, voter registration, crucial medical details, credit reporting, and so on.
+
+Recommended study:
+  - ["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023)
 
 
 ## Prerequisites

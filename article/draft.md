@@ -6,7 +6,7 @@ This article provides a hands-on tutorial to get started running both [Senzing](
 We'll begin with three datasets, clean up entities in the data, then build a knowledge graph from the results.
 The code shown here is intended to be simple to download, easy to follow, and presented so you can also try it with your own data.
 
-![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](before_after.png)
+![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](img/before_after.png)
 
 In this tutorial we'll work in two environments.
 The configuration and coding is at level which should be comfortable for most people working in data science.
@@ -117,13 +117,13 @@ In our example `7687` is the Bolt port number.
 
 Next, open a browser window to our GitHub public repo for this tutorial:
 
-  - <https://github.com/Senzing/ERKG>
+  - <https://github.com/DerwenAI/ERKG>
 
 Clone the repo by copying its URL from GitHub, as shown in the "Clone public repo" figure.
 Then use the following steps to create your **working directory** on your desktop/laptop for this tutorial:
 
 ```bash
-git clone https://github.com/Senzing/ERKG.git
+git clone https://github.com/DerwenAI/ERKG.git
 cd ERKG
 ```
 
