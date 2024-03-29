@@ -36,7 +36,7 @@ that make people get concerned, very concerned, very quickly:
 e.g., billing, deliveries, voter registration, crucial medical details,
 credit reporting, industrial safety, security, and so on.
 
-Recommended study:
+Highly recommended:
   - ["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023)
 
 
