@@ -43,9 +43,9 @@ Highly recommended:
 ## Prerequisites
 
 In this tutorial we'll work in two environments.
-The configuration and coding is at level which should be comfortable
+The configuration and coding are at a level which should be comfortable
 for most people working in data science.
-You will need to have familiarity with how to:
+You'll need to have familiarity with how to:
 
   - clone a public repo from GitHub
   - launch a server in the cloud
