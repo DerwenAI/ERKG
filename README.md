@@ -28,7 +28,7 @@ When the entities, relations, and properties in a KG leverage your
 domain-specific data to strengthen your AI app ... compliance issues
 and audits rush to the foreground.
 
-TL;DR: sense-making of the data from a connected world.
+TL;DR: sense-making of the data coming from a connected world.
 During the transition from data integration to KG construction,
 you need to make sure the entities in your graph get resolved correctly.
 Otherwise, your AI app downstream will struggle with the kinds of details
