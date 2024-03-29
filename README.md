@@ -12,6 +12,7 @@ We'll walk through example code based on Neo4j Desktop and the
 [_Graph Data Science_](https://github.com/neo4j/graph-data-science-client)
 (GDS) library to run Cypher queries on the graph,
 preparing data for downstream analysis and visualizations with
+[Jupyter](https://jupyter.org/),
 [Pandas](https://pandas.pydata.org/),
 [Seaborn](https://seaborn.pydata.org/),
 [PyVis](https://pyvis.readthedocs.io/en/latest/).
