@@ -1,102 +1,68 @@
-## Leverage entity resolution to construct knowledge graphs
+## Entity Resolved Knowledge Graphs
 
-## Introduction
+What's a **knowledge graph**?  A _knowledge graph_ (KG) provides a flexible, structured representation of connected data, enabling advanced search, analysis, visualization, and reasoning capabilities which are difficult to obtain otherwise.
+In other words, KGs help us understand _relations_, they help us contextualize and make sense of the data coming from a connected world.
+Popular use of _retrieval augmented generation_ (RAG) techniques to make AI applications more robust has made KGs quite a hot topic.
 
-This article provides a hands-on tutorial to get started running both [Senzing](https://senzing.com/) for _entity resolution_ and [Neo4j](https://neo4j.com/) for _knowledge graphs_, working in Python code.
-We'll begin with three datasets, clean up entities in the data, then build a knowledge graph from the results.
-The code shown here is intended to be simple to download, easy to follow, and presented so you can also try it with your own data.
+What is **entity resolution**? Using _entity resolution_ (ER) provides advanced data matching and relationship discovery, to identify and link data records that refer to the same real-world entities.
+For example, your business may have multiple nearly identical records in a dataset, with slight variations in the name or address.
+This creates problems.
+Trying to link multiple records for the same entity across multiple datasets poses much bigger problems.
+If you'd like to leverage your data in AI applications, making sense of millions of different entities becomes an enormous problem.
 
-![Before and after – A: 100K unlinked records; B: entity-resolved knowledge graph; C: detail of business entity with 33 duplicate records](img/before_after.png)
+Why is having an **Entity Resolved Knowledge Graph** important?
+Using AI is great, but keeping customers happy and passing compliance audits by using your data correctly is better.
+Without ER, your downstream AI apps will struggle with details that make people grow concerned, very quickly: e.g., security, billing, medical diagnoses, credit reporting, industrial safety, deliveries, voter registration, and so on.
+Audits are the main way to ensure the best quality ER in your apps, and KGs provide investigative tooling to make audits more effective.
+
+![Before and after – A: 100K unconnected data records; B: entity resolved knowledge graph; C: detail of business entity with duplicate records](img/before_after.png)
+
+Visualizations above depict graphs of 100K records from public sources about businesses in Las Vegas.
+This data had a 5% duplication rate, although some businesses had up to 33 duplicate records.
+We built an _entity resolved knowledge graph_, then ran graph analytics – which was quick to run, and provided powerful results.
+
+Here's how you can do this too...
+
+
+## Tutorial overview
+
+This hands-on tutorial in Python demonstrates integration of [Senzing](https://senzing.com/) and [Neo4j](https://neo4j.com/) to construct an Entity Resolved Knowledge Graph.
+The code is simple to download and easy to follow, and presented so you can try it with your own data.
+
+  - Use three datasets describing businesses in Las Vegas: ~100K records with 5% duplicates.
+  - Run _entity resolution_ in Senzing to resolve duplicate business names and addresses.
+  - Parse results to construct a _knowledge graph_ in Neo4j.
+
+We'll walk through example code based on Neo4j Desktop and the [Graph Data Science](https://github.com/neo4j/graph-data-science-client) (GDS) library to run Cypher queries on the graph, preparing data for downstream analysis and visualizations with [Jupyter](https://jupyter.org/), [Pandas](https://pandas.pydata.org/), [Seaborn](https://seaborn.pydata.org/), and [PyVis](https://pyvis.readthedocs.io/en/latest/).
 
 In this tutorial we'll work in two environments.
-The configuration and coding is at level which should be comfortable for most people working in data science.
-You need to have some familiarity with how to:
+The configuration and coding are at a level which should be comfortable for most people working in data science.
+You'll need to have familiarity with how to:
 
-  - clone a public repo from GitHub
-  - launch a server in the cloud
-  - use Linux command lines
-  - write some code in Python
+  - Install a desktop/laptop application.
+  - Clone a public repo from GitHub.
+  - Launch a server in the cloud.
+  - Use simple Linux command lines.
+  - Write some code in Python.
 
-Although _knowledge graphs_ (KGs) have been around for many years, there's been lots of recent interest due to uses with AI. For example, it turns out that KGs are super helpful to "ground" the prompts and results of chatbots, to reduce "hallucination" errors in AI models.
-
-We need to discuss about _entity resolution_ (ER), which becomes especially important when you're working with knowledge graphs.
-Recognize that knowledge graphs help us understand _relations_ between _entities_.
-You can think in terms of language grammar, where entities are the "nouns" and relations are the "verbs" connecting them.
-In the sentence `"Jack catches the ball"` there are two entities `"Jack"` and `"the ball"` which are both nouns, and these are connected by a relation `"catches"` which is a verb.
-This approach of using graphs allows for very flexible ways of representing knowledge in general.
-Also, there are many powerful algorithms which can be applied for graph data, plus queries, graph machine learning, and so on.
-
-But there are caveats.
-If the quality of our input datasets is anything like _most_ data in the world, there will be errors.
-Imagine that someone named `"Robert Smith"` lives on `"First Street"` in a large city, and there's also `"Robert A. Smith"` and `"Robert Smith, Jr."` or some typo introduced in official records, confusing either their names or addresses.
-Either case makes record matching confusing and within public records "confusing" might get numbered in the tens, or hundreds, or thousands.
-On the one hand, `"Robert X."` might not be amused to receive an electricity bill for `"Robert A."` when the post office mixes up records.
-On the other hand, if `"Robert X."` recently fled from an arrest, `"Robert A."` is going to hope the police department doesn't make the same mistake.
-
-When we build knowledge graphs we want to make sure that unique entities don't get fragmented into a bunch of other poorly connected entities.
-Nor do we want different entities to get collapsed into one giant blob.
-The process of ER involves highly sophisticated decisions about input data records, being careful to consolidate multiple references to the same entity together, while splitting references which are different.
-In other words, when we scan a thousand records from different sources describing a community, then based on names and addresses we want to determine which records are shared by the same entity, and which records represent unique entities.
-
-By the way, if you're already familiar with _natural language processing_ (NLP) tools used in data science, such as the popular [`spaCy` library](https://spacy.io/) in Python, you may have used [_named entity recognition_](https://nlpprogress.com/english/named_entity_recognition.html) (NER) previously.
-Understand that NER is quite different from ER: NER simply identifies spans of text which are likely to be proper nouns (i.e., entities) then tags them with labels.
-So is `"Jack"` a person, place, or thing?
-Jack is a person.
-The ball is a thing.
-NER provides `"person"` and `"thing"` as labels.
-That's helpful for _parsing_ text, but not especially useful for constructing KGs.
-Your input data might contain references to different but overlapping entities, in which case after running NER you'll need to clean up the KG by _disambiguating_ entities **after** they've been linked.
-That's generally quite a mess, and can be costly.
-
-Use ER on your data records first, then build your graph.
-This is a much better way to produce useful graph data and make the most of KGs, AI applications, and so on.
-
-
-## Senzing and Neo4j background
-
-Before we jump into code, let's cover some background about the two technologies we're showing in this tutorial: Senzing and Neo4j.
-
-[Senzing](https://senzing.com/) provides a 6th generation industrial strength engine for _entity resolution_.
-The product has been shipping since 2012 and is used around the world by law enforcement, tax authorities, defense/ intelligence agencies, and enterprise applications in general.
-The company's expertise in this field is stellar: people on this team have on average more than 20 years experience in ER production, often in extreme cases.
-
-Note that the code for Senzing is open source.
-Check out <https://github.com/Senzing> on GitHub where you can find more than 30 public repos.
-You can download and get running right away, with a free license for up to 100,000 records.
-This scales from the largest use cases all the way down to running on a laptop.
-You can run from Docker containers available as source on GitHub or images on [Docker Hub](https://hub.docker.com/u/senzing), or develop code using [API bindings](https://docs.senzing.com/) for Java and Python.
-
-A motto at the company is "We see transmissions, not cars."
-To be clear, everything about this technology is laser-focused on providing speed, accuracy, and throughput for the best quality ER available -- connecting the right data to the right person, in real time.
-For details about the company, see the ["Senzing AI: A New Era"](https://senzing.com/senzing-ai-video/).
-For deep-dives into how Senzing _entity resolution_ works, see these two technical overview articles:
-
-  - ["Principle-Based Entity Resolution Explained"](https://senzing.com/principle-based-ER)
-  - ["Entity Resolution Capabilities to Consider"](https://senzing.com/er-capabilities)
-
-[Neo4j](https://neo4j.com/) is the world's most popular solution for graph databases.
-It provides native graph storage, graph data science, graph machine learning, analytics, and visualization -- with enterprise-grade security controls to scale transactional and analytic workloads.
-
-First released in 2010, Neo4j pioneered using [Cypher](https://en.wikipedia.org/wiki/Cypher_(query_language)), a declarative graph query language for _labeled property graphs_.
-As mentioned, graphs help us understand **relationships**.
-In contrast, relational databases, data warehouses, data lakes, data lakehouses, etc., tend to emphasize **facts**.
-That's important because AI -- and for that matter, _business decisions_ in general -- depend on relationships within the data.
-
-Extending from the "nouns" and "verbs" analogy we'd described above, Cypher also provides for _properties_.
-You can think of these as the "adjectives" in human language.
-The expressiveness of Cypher queries results in data analytics applications with 10x less code than comparable applications written in SQL.
-
-Neo4j has an incredible developer community, with so many resources available online.
-Check out  <https://github.com/neo4j> on GitHub for more than 70 public repos supporting a wide range of graph technologies.
-For an excellent introduction overall, see the recent ["Intro to Neo4j"](https://www.youtube.com/watch?v=YDWkPFijKQ4&t=572s) video.
-Also check the many courses, certifications programs, and other resources at [GraphAcademy](https://graphacademy.neo4j.com/).
+Cloud computing budget: running a cloud instance for Senzing in this tutorial cost a total of $0.13 USD.
 
 
 ## Get started with Neo4j
 
+[Neo4j](https://neo4j.com/) provides native graph storage, graph data science, power graph algorithms and machine learning, analytics, visualization, and so on -- with enterprise-grade security controls to scale transactional and analytic workloads.
+First released in 2010, Neo4j pioneered using [Cypher](https://en.wikipedia.org/wiki/Cypher_(query_language)), a declarative graph query language for _labeled property graphs_.
+
+Graphs help us understand **relationships** --
+in contrast to relational databases, data warehouses, data lakes, data lakehouses, etc., where the data tends to emphasize **facts**.
+Compared with human language: "nouns" are the _nodes_ (aka, entities) in a graph, while "verbs" are the _relations_ connecting entities.
+Cypher defines _labels_ on nodes, which in human language would determine whether a proper noun was a person, place, or thing – and so on.
+Cypher also defines _properties_ on both nodes and relations, which correspond to adjectives in human language.
+The expressiveness of Cypher queries results in data analytics applications with 10x less code than comparable applications written in SQL.
+
 To get started coding, first let's set up a _Neo4j Desktop_ application, beginning with the download instructions at <https://neo4j.com/download/> for your desktop or laptop.
-This is available on Mac, Linux, and Windows.
 While there are multiple ways to get started with Neo4j, Desktop provides a quick way to begin working with the general set of features that we'll need.
+It's available on Mac, Linux, and Windows.
 
 Once the download completes, follow the [instructions to install the Desktop application](https://neo4j.com/docs/desktop-manual/current/installation/download-installation/) and register to obtain an activation key for it.
 Then open the application and copy/paste your activation key.
@@ -273,7 +239,7 @@ https://stackoverflow.com/a/51285940/1698443
 Now let's load the `Places of Interest` (POI) dataset for Las Vegas, which can be obtained from SafeGraph: <https://www.safegraph.com/products/places>
 
 ```python
-poi_path: pathlib.Path = pathlib.Path("lv_data") / "poi.json"
+poi_path: pathlib.Path = pathlib.Path("../lv_data") / "poi.json"
 
 df_poi: pd.DataFrame = pd.DataFrame.from_dict(
     [ json.loads(line) for line in poi_path.open(encoding = "utf-8") ],
@@ -341,7 +307,7 @@ Clearly, we'll need to run _entity resolution_ to make use of this dataset!
 Next, let's load the `Wage and Hour Compliance Action Data` (WHISARD) dataset for Las Vegas, from the US Department of Labor: <https://enforcedata.dol.gov/views/data_summary.php>
 
 ```python
-dol_path: pathlib.Path = pathlib.Path("lv_data") / "dol.csv"
+dol_path: pathlib.Path = pathlib.Path("../lv_data") / "dol.csv"
 df_dol: pd.DataFrame = pd.read_csv(dol_path, dtype = str, encoding = "utf-8")
 ```
 
@@ -405,7 +371,7 @@ But we'll make use of what we've got.
 Next we'll load the `PPP Loans over $150K` (PPP) dataset for Las Vegas, from the US Small Business Administration: <https://data.sba.gov/dataset/ppp-foia>
 
 ```python
-ppp_path: pathlib.Path = pathlib.Path("lv_data") / "ppp.csv"
+ppp_path: pathlib.Path = pathlib.Path("../lv_data") / "ppp.csv"
 
 df_ppp: pd.DataFrame = pd.read_csv(
     ppp_path,
@@ -593,7 +559,16 @@ Note that the Neo4j node for each loaded record has:
 
 ## Get started with Senzing
 
-Next we'll set up Senzing and load these three datasets, then run _entity resolution_.
+[Senzing](https://senzing.com/) provides a 6th generation industrial strength engine for _entity resolution_.
+A motto at the company is "We see transmissions, not cars."
+To be clear, everything about this technology is laser-focused on providing speed, accuracy, and throughput for the best quality ER available -- connecting the right data to the right person, in real time.
+The company's expertise in this field is stellar: people on this team have on average more than 20 years experience in ER, often in extreme production use cases.
+
+Note that the code for Senzing is open source.
+Check out <https://github.com/Senzing> on GitHub where you can find more than 30 public repos.
+You can download and get running right away, with a free license for up to 100,000 records.
+This scales from the largest use cases all the way down to running on a laptop.
+You can run from Docker containers available as source on GitHub or images on [Docker Hub](https://hub.docker.com/u/senzing), or develop code using [API bindings](https://docs.senzing.com/) for Java and Python.
 
 There are several convenient ways to get started with [Senzing](https://senzing.com/explore-senzing-entity-resolution/).
 Production use cases typically develop a Java or Python application, which call Senzing running in a container -- as a microservice.
@@ -743,7 +718,8 @@ import pathlib
 import sys
 import typing
 
-from graphdatascience import GraphDataScience 
+from graphdatascience import GraphDataScience
+from icecream import ic
 from tqdm import tqdm
 import dotenv
 import matplotlib.pyplot as plt
@@ -809,7 +785,7 @@ Now let's parse the JSON data from the export -- in the `export.json` file downl
 We'll build a dictionary of entities indexed by unique identifiers, keeping track of both the "resolved" and "related" records for each entity to use later when constructing the KG:
 
 ```python
-export_path: pathlib.Path = pathlib.Path("export.json")
+export_path: pathlib.Path = pathlib.Path("../export.json")
 entities: dict = {}
 
 with export_path.open() as fp:
@@ -940,30 +916,59 @@ CALL db.schema.visualization()
 This is starting to resemble a knowledge graph!
 Let's dig into more details...
 
+Since we're trying to link records across the three datasets, it'd be helpful to measure how much the process of _entity resolution_ has consolidated records among the input datasets.
+In particular, it'd be helpful to understand:
 
-Since we're trying to link records across the three datasets, it'd be helpful to understand the degree to which Senzing ER 
-linked these records.
-Let's repeat the following _graph data science_ sequence of steps to explore linking:
+  - total number of entities
+  - number of entities with linked reference (should be 100%)
+  - number of linked records per entity
+  - number of related entities per entity
+
+```python
+df_ent: pd.DataFrame = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN ent.uid AS ent_uid, COUNT { (ent)-[:RESOLVES]->(:Record) } AS num_rec, COUNT { (ent)-[:RELATED]->(:Entity) } AS num_rel
+ORDER BY num_rec DESC
+  """
+)
+
+df_rec: pd.DataFrame = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN COUNT(ent.uid) AS count_ent, COUNT { (ent)-[:RESOLVES]->(:Record) } AS num_rec
+ORDER BY num_rec DESC
+  """
+)
+
+df_rel: pd.DataFrame = gds.run_cypher(
+  """
+MATCH (ent:Entity)
+RETURN COUNT(ent.uid) AS count_ent, COUNT { (ent)-[:RELATED]->(:Entity) } AS num_rel
+ORDER BY num_rel DESC
+  """
+)
+
+total_entities: int = df_ent.ent_uid.count()
+total_records: int = df_ent.num_rec.sum()
+unref_ents: int = df_rec.loc[df_rec["num_rec"] < 1].count().iloc[0]
+dupl_rate: float = round((total_records - total_entities) / float(total_entities), 2)
+
+ic(total_entities, total_records, unref_ents, dupl_rate);
+```
+
+Great, 100% of the input records have been resolved as entities – as expected.
+A rate of ~5% duplicates was detected among these records.
+
+Now let's run more detailed statistical analysis, visualizing histograms for the resolved entities.
+We'll repeat the following _graph data science_ sequence of steps to explore this linking:
 
   - run a Cypher query in Neo4j using GDS
   - collect query results as Pandas dataframes
   - use [Seaborn](https://seaborn.pydata.org/) to visualize the dataframes
 
 ```python
-df_rel = gds.run_cypher(
-  """
-MATCH (ent:Entity)
-RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RELATED]->(:Entity) } as num_rel
-ORDER BY num_rel DESC
-  """
-)
-
-df_rel_avg = gds.run_cypher(
-  """
-MATCH (ent:Entity)
-RETURN ent.uid, COUNT { (ent)-[:RELATED]->(:Entity) } as num_rel
-  """
-)
+rel_mean: float = df_ent.num_rel.mean()
 
 fig, ax = plt.subplots()
 plt.rcParams["font.family"] = "sans-serif"
@@ -974,7 +979,8 @@ y.bar_label(y.containers[0], padding = 3, color = "gray", fontsize = 7)
 
 plt.xlabel("related entities per entity", size = 10, fontstyle = "italic")
 plt.ylabel("entity count", size = 10, fontstyle = "italic")
-plt.axvline(x = df_rel_avg["num_rel"].mean(), color = "red")
+
+plt.axvline(x = rel_mean, color = "red", lw = 2.5)
 
 sns.despine(bottom = True, left = True)
 plt.yscale("log")
@@ -983,20 +989,7 @@ plt.yscale("log")
 ![histogram: entities count vs. related entities per entity](img/graphs.plot.ent_rel.png)
 
 ```python
-df_rec = gds.run_cypher(
-  """
-MATCH (ent:Entity)
-RETURN COUNT(ent.uid) as count_ent, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
-ORDER BY num_rec DESC
-  """
-)
-
-df_rec_avg = gds.run_cypher(
-  """
-MATCH (ent:Entity)
-RETURN ent.uid, COUNT { (ent)-[:RESOLVES]->(:Record) } as num_rec
-  """
-)
+rec_mean: float = df_ent.num_rec.mean()
 
 fig, ax = plt.subplots()
 plt.rcParams["font.family"] = "sans-serif"
@@ -1007,7 +1000,8 @@ y.bar_label(y.containers[0], padding = 3, color = "gray", fontsize = 7)
 
 plt.xlabel("records per entity", size = 10, fontstyle = "italic")
 plt.ylabel("entity count", size = 10, fontstyle = "italic")
-plt.axvline(x = df_rec_avg["num_rec"].mean(), color = "red")
+
+plt.axvline(x = rec_mean, color = "red", lw = 2.5)
 
 sns.despine(bottom = True, left = True)
 plt.yscale("log")
@@ -1015,8 +1009,8 @@ plt.yscale("log")
 
 ![histogram: entities count vs. records per entity](img/graphs.plot.ent_rec.png)
 
-On average, each entity has more than 2 records linked.
-Some of them have more than 30 records!
+Wow, some of these entities have resolved more than 30 records!
+Imagine being that business with 30 shadows out there, trying to get your tax records untangled.
 
 Let's use the [PyVis](https://pyvis.readthedocs.io/en/latest/) library in Python to visualize relations in our KG.
 In other words, we'll visualize the knowledge graph to illustrate how much convergence of dataset records we achieved through entity resolution:
@@ -1060,16 +1054,46 @@ net.show("vegas.2.html")
 ![network: entities linked with records](img/vegas.2.png)
 
 Et voilà – our graph begins to emerge!
-Notice the clusters, some of which have 30+ records linked to the same entity.
+The full HTML+JavaScript file is large and may take several minutes to load.
+You can also view these results by loading the `big_vegas.2.html` file in your web browser.
+
 Let’s zoom into the bottom/center:
 
 ![network: zoom into record linking](img/vegas.3.png)
 
+Here the red stars are entities, while the blue squares are input data records.
+Notice these clusters, some of which have 30+ records linked to the same entity.
+
 
 ## Summary
 
-    1. Describe popular needs for this kind of work with KGs, e.g., using GraphRAG in AI:
-		- <https://neo4j.com/developer-blog/knowledge-graph-rag-application/>
-	2. Next steps...
-		- Neo4j follow-ups <https://graphacademy.neo4j.com/> 
-		- Senzing follow-ups ???
+To recap, here's a list of what we've just accomplished:
+
+  1. Installed Neo4j Desktop and cloned a public GitHub repo locally to get code for this tutorial.
+  2. Loaded three datasets about businesses in Las Vegas: records for 100K business, with 5% duplicates based on slight variations in names and addresses.
+  3. Used Pandas to review the input data, then loaded records into Neo4j – at this point as unconnected nodes and properties.
+  4. Installed Senzing on a Linux cloud server instance, uploaded the three datasets, and ran entity resolution.
+  5. Exported the ER results back to the desktop/laptop, then parsed the JSON and loaded entities into Neo4j.
+  6. Connected the entities with the input records.
+  7. Used Seaborn to analyze the difference that ER makes, quantitatively and in histograms.
+  8. Used PyViz to build interactive visualizations of the “before” data graph versus the “after” entity resolved knowledge graph.
+  9. Thought a lot about how to mine this data to build even more structure into the KG, leveraging it with GraphRAG to build a custom LLM application that answers burning questions about Las Vegas ...
+
+Imagine the questions we could answer: for example, 
+"Where's a pizza restaurant with a large number of employees and no history of compliance violations, located near a bike shop and a cinema?"
+To learn more about GraphRAG and using ERKGs in AI applications, check out ["Using a Knowledge Graph to Implement a RAG Application"](https://neo4j.com/developer-blog/knowledge-graph-rag-application/) by Tomaz Bratanic.
+Stay tuned for our next tutorial here, too.
+
+Also check out this highly recommended video for details about how to use _entity resolved knowledge graphs_ in practice:
+["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023).
+
+For details about Senzing and deep-dives into how _entity resolution_ works, see:
+
+  - ["Senzing AI: A New Era"](https://senzing.com/senzing-ai-video/)
+  - ["Principle-Based Entity Resolution Explained"](https://senzing.com/principle-based-ER)
+  - ["Entity Resolution Capabilities to Consider"](https://senzing.com/er-capabilities)
+
+To learn more about Neo4j, there's an incredible developer community, and many resources available online.
+Check out  <https://github.com/neo4j> on GitHub for more than 70 public repos supporting a wide range of graph technologies.
+There's an excellent introduction in the recent ["Intro to Neo4j"](https://www.youtube.com/watch?v=YDWkPFijKQ4&t=572s) video.
+Also check the many online courses, certifications programs, and other resources at [GraphAcademy](https://graphacademy.neo4j.com/).
