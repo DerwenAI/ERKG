@@ -90,6 +90,7 @@ these notebooks:
 
   1. [`examples/datasets.ipynb`](examples/datasets.ipynb)
   2. [`examples/graph.ipynb`](examples/graph.ipynb)
+  3. [`examples/impact.ipynb`](examples/impact.ipynb)
 
 You can view the results --
 an interactive visualization of the entity resolved knowledge graph --
