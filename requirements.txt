@@ -3,6 +3,7 @@ ipywidgets >= 8.1
 jupyterlab >= 4.1
 jupyterlab_execute_time >= 3.1
 matplotlib >= 3.8
+neo4j >= 5.18
 graphdatascience[networkx] >= 1.9
 python-dotenv >= 1.0
 pyvis >= 0.3
