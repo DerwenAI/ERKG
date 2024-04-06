@@ -7,6 +7,7 @@ to construct an _Entity Resolved Knowledge Graph_:
   1. Use three datasets describing businesses in Las Vegas: ~100K records, 4% duplicates.
   2. Run _entity resolution_ in Senzing to resolve duplicate business names and addresses.
   3. Parse results to construct a _knowledge graph_ in Neo4j.
+  4. Analyze and visualize the _entity resolved knowledge graph_.
 
 We'll walk through example code based on Neo4j Desktop and the
 [Graph Data Science](https://github.com/neo4j/graph-data-science-client)
@@ -20,7 +21,7 @@ preparing data for downstream analysis and visualizations with
 The code is simple to download and easy to follow, and presented so
 you can try it with your own data.
 
-![Before and After](article/img/before_after.png)
+![Before and After](article/before_after.png)
 
 Why?
 For one example, popular use of _retrieval augmented generation_ (RAG)
@@ -53,8 +54,10 @@ You'll need to have familiarity with how to:
   - use Linux command lines
   - write some code in Python
 
+Total estimated project time: 35 minutes.
+
 Cloud computing budget: running Senzing in this tutorial cost a total
-of $0.13 USD.
+of $0.04 USD.
 
 
 ## Set up local environment
@@ -85,8 +88,7 @@ First, launch Jupyter:
 ./venv/bin/jupyter lab
 ```
 
-Then, based on the `article/draft.md` tutorial, follow steps shown in
-these notebooks:
+Then based on the [tutorial](TBD), follow the steps shown in these notebooks:
 
   1. [`examples/datasets.ipynb`](examples/datasets.ipynb)
   2. [`examples/graph.ipynb`](examples/graph.ipynb)
