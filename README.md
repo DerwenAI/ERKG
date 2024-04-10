@@ -101,6 +101,21 @@ in a web browser.
 The full HTML+JavaScript is large and may take several minutes to load.
 
 
+## Deleting data
+
+If you need to clear the database and start over, run this in Neo4j Desktop:
+
+```cypher
+MATCH (n)
+CALL {
+  WITH n
+  DETACH DELETE n
+} IN TRANSACTIONS
+```
+
+See: <https://neo4j.com/docs/cypher-manual/current/subqueries/subqueries-in-transactions/#delete-with-call-in-transactions>
+
+
 ## Kudos
 
 Many thanks to:
