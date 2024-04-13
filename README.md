@@ -21,7 +21,7 @@ preparing data for downstream analysis and visualizations with
 
 The code is simple to download and easy to follow, and presented so
 you can try it with your own data.
-Overall, this tutorial take about 35 minutes total to run.
+Overall, this tutorial takes about 35 minutes total to run.
 
 ![Before and After](article/before_after.png)
 
