@@ -5,7 +5,7 @@ This hands-on tutorial in Python demonstrates integration of
 to construct an
 [_Entity Resolved Knowledge Graph_](https://senzing.com/entity-resolved-knowledge-graphs/):
 
-  1. Use three datasets describing businesses in Las Vegas: ~100K records, 4% duplicates.
+  1. Use three datasets describing businesses in Las Vegas: ~85K records, ~2% duplicates.
   2. Run _entity resolution_ in Senzing to resolve duplicate business names and addresses.
   3. Parse results to construct a _knowledge graph_ in Neo4j.
   4. Analyze and visualize the _entity resolved knowledge graph_.
@@ -21,6 +21,7 @@ preparing data for downstream analysis and visualizations with
 
 The code is simple to download and easy to follow, and presented so
 you can try it with your own data.
+Overall, this tutorial take about 35 minutes total to run.
 
 ![Before and After](article/before_after.png)
 
