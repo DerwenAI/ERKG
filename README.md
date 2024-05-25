@@ -23,7 +23,7 @@ The code is simple to download and easy to follow, and presented so
 you can try it with your own data.
 Overall, this tutorial takes about 35 minutes total to run.
 
-![Before and After](article/before_after.png)
+![Before and After](1_lasvegas/article/before_after.png)
 
 Why?
 For one example, popular use of _retrieval augmented generation_ (RAG)
@@ -43,9 +43,12 @@ credit reporting, industrial safety, security, and so on.
 Highly recommended:
   - ["Entity Resolved Knowledge Graphs"](https://senzing.com/entity-resolved-knowledge-graphs/)
   - ["Analytics on Entity Resolved Knowledge Graphs"](https://youtu.be/ZgK5YHNixTM), Mel Richey (2023)
+  - ["https://gradientflow.com/entity-resolution-insights-and-implications-for-ai-applications/"](https://gradientflow.com/entity-resolution-insights-and-implications-for-ai-applications/), Ben Lorica (2023)
 
 
-## Prerequisites
+## Tutorial 1: Las Vegas
+
+### Prerequisites
 
 In this tutorial we'll work in two environments.
 The configuration and coding are at a level which should be comfortable
@@ -63,7 +66,7 @@ Cloud computing budget: running Senzing in this tutorial cost a total
 of $0.04 USD.
 
 
-## Set up local environment
+### Set up local environment
 
 After cloning this repo, connect into the `ERKG` directory and set up
 your local environment:
@@ -71,6 +74,7 @@ your local environment:
 ```bash
 git clone https://github.com/DerwenAI/ERKG.git
 cd ERKG
+cd 1_lasvegas/
 
 python3.11 -m venv venv
 source venv/bin/activate
@@ -83,7 +87,7 @@ We're using Python 3.11 here, although this code should run with most
 of the recent Python 3.x versions.
 
 
-## Run the tutorial notebooks
+### Run the tutorial notebooks
 
 First, launch Jupyter:
 
@@ -93,13 +97,13 @@ First, launch Jupyter:
 
 Then based on the [tutorial](TBD), follow the steps shown in these notebooks:
 
-  1. [`examples/datasets.ipynb`](examples/datasets.ipynb)
-  2. [`examples/graph.ipynb`](examples/graph.ipynb)
-  3. [`examples/impact.ipynb`](examples/impact.ipynb)
+  1. [`1_lasvegas/examples/datasets.ipynb`](1_lasvegas/examples/datasets.ipynb)
+  2. [`1_lasvegas/examples/graph.ipynb`](1_lasvegas/examples/graph.ipynb)
+  3. [`1_lasvegas/examples/impact.ipynb`](1_lasvegas/examples/impact.ipynb)
 
 You can view the results --
 an interactive visualization of the entity resolved knowledge graph --
-by loading [`examples/big_vegas.2.html`](examples/big_vegas.2.html)
+by loading [`1_lasvegas/examples/big_vegas.2.html`](1_lasvegas/examples/big_vegas.2.html)
 in a web browser.
 The full HTML+JavaScript is large and may take several minutes to load.
 

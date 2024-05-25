@@ -1,11 +1,11 @@
 # local files
 .env
 *~
-dl/
-lv_data/
-examples/vegas.?.html
-export.json
-article/before_after.*
+1_lasvegas/dl/
+1_lasvegas/lv_data/
+1_lasvegas/examples/vegas.?.html
+1_lasvegas/export.json
+1_lasvegas/article/before_after.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
