@@ -1,2 +1,5 @@
-llama-index == 0.9.48
-llama-index-llms-ollama
+icecream >= 2.1
+llama-index >= 0.10
+llama-index-llms-ollama >= 0.1.5
+neo4j >= 5.20
+python-dotenv >= 1.0
