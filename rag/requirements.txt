@@ -2,6 +2,7 @@ icecream >= 2.1
 llama-index >= 0.10
 llama-index-llms-ollama >= 0.1.5
 neo4j >= 5.20
+pyinstrument >= 4.6
 python-dotenv >= 1.0
 torch >= 2.3
 transformers >= 4.41

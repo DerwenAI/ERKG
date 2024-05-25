@@ -1,14 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+PoC for KG+RAG using `llama-index`, `ollama`, `neo4j`, and "llama3"
+
+Based on:
+
+  * <https://guitton.co/posts/graphs-and-language>
+  * <https://docs.llamaindex.ai/en/stable/examples/index_structs/knowledge_graph/Neo4jKGIndexDemo/>
+
+NB: this code uses `llama-index` v0.10.x under the "legacy" branch --
+Which ATM seems most stable? See answer by @gino-mempin
+<https://stackoverflow.com/questions/78105511/importerror-cannot-import-name-ollama-from-llama-index-llms-unknown-locati>
+"""
 
 import os
-import sys
+import sys  # pylint: disable=W0611
+import traceback
 import typing
 
-from icecream import ic
+from icecream import ic  # pylint: disable=E0401
+from pyinstrument import Profiler  # pylint: disable=E0401
 import dotenv
-
-# this code uses `llama-index` v0.10.x under the "legacy" branch -- which ATM seems most stable?
-# see answer by @gino-mempin
-# https://stackoverflow.com/questions/78105511/importerror-cannot-import-name-ollama-from-llama-index-llms-unknown-locati
 
 from llama_index.legacy.core.response.schema import Response
 from llama_index.legacy.data_structs.data_structs import KG
@@ -29,8 +42,8 @@ def init_service (
     embed_model: str = "local:BAAI/bge-small-en",
     ) -> ServiceContext:
     """
-Load a local model using `ollama` orchestration,
-then initialize and return a service context.
+Load a local model using `ollama` orchestration.
+Then initialize and return a service context.
     """
     llm: Ollama = Ollama(
         model = model,
@@ -47,25 +60,30 @@ then initialize and return a service context.
 def connect_neo4j (
     ) -> StorageContext:
     """
-Load the Neo4j credentials, then create and return a storage context.
+Load the Neo4j credentials.
+Then create and return a storage context.
     """
-    dotenv.load_dotenv(dotenv.find_dotenv())
+    try:
+        dotenv.load_dotenv(dotenv.find_dotenv())
 
-    bolt_uri: str = os.environ.get("NEO4J_BOLT")
-    database: str = os.environ.get("NEO4J_DBMS")
-    username: str = os.environ.get("NEO4J_USER")
-    password: str = os.environ.get("NEO4J_PASS")
+        bolt_uri: str = os.environ.get("NEO4J_BOLT")
+        database: str = os.environ.get("NEO4J_DBMS")
+        username: str = os.environ.get("NEO4J_USER")
+        password: str = os.environ.get("NEO4J_PASS")
 
-    graph_store: Neo4jGraphStore = Neo4jGraphStore(
-        url = bolt_uri,
-        database = database,
-        username = username,
-        password = password,
-    )
+        graph_store: Neo4jGraphStore = Neo4jGraphStore(
+            url = bolt_uri,
+            database = database,
+            username = username,
+            password = password,
+        )
 
-    return StorageContext.from_defaults(
-        graph_store = graph_store
-    )
+        return StorageContext.from_defaults(
+            graph_store = graph_store
+        )
+    except Exception as ex:  # pylint: disable=W0718
+        ic(ex)
+        traceback.print_exc()
 
 
 def build_engine (
@@ -79,7 +97,7 @@ Build a KG index, using either:
   * newly constructed KG from documents, stored in a graph DB
   * previously constructed KG, retrieved from a graph DB
 
-The build and return a query engine based on it.
+Then build and return a query engine based on it.
     """
     if documents is not None:
         kg_index: KnowledgeGraphIndex = KnowledgeGraphIndex.from_documents(
@@ -108,6 +126,9 @@ The build and return a query engine based on it.
 
 
 if __name__ == "__main__":
+    profiler: Profiler = Profiler()
+    profiler.start()
+
     service_context: ServiceContext = init_service()
 
     ######################################################################
@@ -137,3 +158,10 @@ if __name__ == "__main__":
 
     response: response = query_engine.query(test_prompt)
     ic(response)
+
+
+    ######################################################################
+    # report performance profiling
+
+    profiler.stop()
+    profiler.print()
