@@ -1,25 +1,54 @@
 
 import os
 import sys
+import typing
 
 from icecream import ic
 import dotenv
 
+# this code uses `llama-index` v0.10.x under the "legacy" branch -- which ATM seems most stable?
 # see answer by @gino-mempin
 # https://stackoverflow.com/questions/78105511/importerror-cannot-import-name-ollama-from-llama-index-llms-unknown-locati
-from llama_index.legacy.llms.ollama import CompletionResponse, Ollama
 
+from llama_index.legacy.core.response.schema import Response
 from llama_index.legacy.data_structs.data_structs import KG
 from llama_index.legacy.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
+from llama_index.legacy.llms.ollama import CompletionResponse, Ollama
 from llama_index.legacy.query_engine import RetrieverQueryEngine
+from llama_index.legacy.readers.wikipedia import WikipediaReader
 from llama_index.legacy.retrievers import KGTableRetriever
 from llama_index.legacy.service_context import ServiceContext
 from llama_index.legacy.storage.storage_context import StorageContext
 
 
-if __name__ == "__main__":
-    # load Neo4j credentials and create a storage context
+def init_service (
+    *,
+    model: str = "llama3",
+    base_url: str = "http://localhost:11434",
+    embed_model: str = "local:BAAI/bge-small-en",
+    ) -> ServiceContext:
+    """
+Load a local model using `ollama` orchestration,
+then initialize and return a service context.
+    """
+    llm: Ollama = Ollama(
+        model = model,
+        base_url = base_url,
+        #request_timeout = 60.0,
+    )
+
+    return ServiceContext.from_defaults(
+        llm = llm,
+        embed_model = embed_model,
+    )
+
+
+def connect_neo4j (
+    ) -> StorageContext:
+    """
+Load the Neo4j credentials, then create and return a storage context.
+    """
     dotenv.load_dotenv(dotenv.find_dotenv())
 
     bolt_uri: str = os.environ.get("NEO4J_BOLT")
@@ -34,48 +63,77 @@ if __name__ == "__main__":
         password = password,
     )
 
-    storage_context: StorageContext = StorageContext.from_defaults(
+    return StorageContext.from_defaults(
         graph_store = graph_store
     )
 
 
-    # load a local model and create a service context
-    llm: Ollama = Ollama(
-        model = "llama3",
-        base_url = "http://localhost:11434",
-        request_timeout = 60.0,
-    )
+def build_engine (
+    service_context: ServiceContext,
+    *,
+    documents: typing.Optional[ list ] = None,
+    ) -> RetrieverQueryEngine:
+    """
+Build a KG index, using either:
 
-    service_context: ServiceContext = ServiceContext.from_defaults(
-        llm = llm,
-        embed_model = "local:BAAI/bge-small-en",
-    )
+  * newly constructed KG from documents, stored in a graph DB
+  * previously constructed KG, retrieved from a graph DB
 
-    # run a test prompt, just for kix
-    test_prompt: str = "How many licks to get to the center of a tootsie pop? Answer yes or no only."
-    response: CompletionResponse = llm.complete(test_prompt)
-    ic(response.text)
+The build and return a query engine based on it.
+    """
+    if documents is not None:
+        kg_index: KnowledgeGraphIndex = KnowledgeGraphIndex.from_documents(
+            documents,
+            storage_context = connect_neo4j(),
+            service_context = service_context,
+            max_triplets_per_chunk = 5,
+            include_embeddings = False,
+            kg_triplet_extract_fn = None,
+            kg_triple_extract_template = None,
+        )
+    else:
+        kg_index = KnowledgeGraphIndex(
+            index_struct = KG(index_id = "vector"),
+            storage_context = connect_neo4j(),
+            service_context = service_context,
+        )
 
-
-    # set up a KG index
-    kg_index: KnowledgeGraphIndex = KnowledgeGraphIndex(
-        index_struct = KG(index_id = "vector"),
+    return RetrieverQueryEngine.from_args(
+        retriever = KGTableRetriever(
+            index = kg_index,
+            retriever_mode = "keyword",
+        ),
         service_context = service_context,
-        storage_context = storage_context,
     )
 
-    graph_rag_retriever: KGTableRetriever = KGTableRetriever(
-        index = kg_index,
-        retriever_mode = "keyword",
+
+if __name__ == "__main__":
+    service_context: ServiceContext = init_service()
+
+    ######################################################################
+    # load data from Wikipedia docs to build a KG
+    # then build a query engine from triples retrieval
+
+    documents: list = WikipediaReader().load_data(
+        pages = ["Guardians of the Galaxy Vol. 3"],
+        auto_suggest = False,
     )
 
-    kg_rag_query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args(
-        retriever = graph_rag_retriever,
-        service_context = service_context,
+    query_engine: RetrieverQueryEngine = build_engine(
+        service_context,
+        #documents = documents,
     )
 
-    #sys.exit(0)
-    #print(type(kg_index))
-    response_graph_rag = kg_rag_query_engine.query("Tell me about Peter Quill.")
-    ic(response_graph_rag)
-    #display(Markdown(f"<b>{response_graph_rag}</b>"))
+
+    ######################################################################
+    # run queries
+
+    test_prompt: str = "Tell me about Peter Quill."
+
+    if False:  # True
+        # run a test prompt without RAG, just for kix
+        response: CompletionResponse = llm.complete(test_prompt)
+        ic(response.text)
+
+    response: response = query_engine.query(test_prompt)
+    ic(response)
