@@ -12,7 +12,7 @@ ollama run llama3
 
 Set up the Python environment:
 
-``bash
+```bash
 python3.11 -m venv venv
 source venv/bin/activate
 python3.11 -m pip install -U pip wheel setuptools
