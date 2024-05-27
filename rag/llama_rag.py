@@ -90,6 +90,7 @@ def build_engine (
     service_context: ServiceContext,
     *,
     documents: typing.Optional[ list ] = None,
+    response_mode: str = "compact",
     ) -> RetrieverQueryEngine:
     """
 Build a KG index, using either:
@@ -119,9 +120,10 @@ Then build and return a query engine based on it.
     return RetrieverQueryEngine.from_args(
         retriever = KGTableRetriever(
             index = kg_index,
-            retriever_mode = "keyword",
+            retriever_mode = "keyword",  # "hybrid"
         ),
         service_context = service_context,
+        response_mode = response_mode,
     )
 
 
@@ -143,6 +145,7 @@ if __name__ == "__main__":
     query_engine: RetrieverQueryEngine = build_engine(
         service_context,
         #documents = documents,
+        response_mode = "refine",  # "compact"
     )
 
 
