@@ -1,5 +1,10 @@
-Download `ollama` and launch it:
-<https://github.com/ollama/ollama>
+KG+RAG examples,
+to extend <https://neo4j.com/developer-blog/entity-resolved-knowledge-graphs/#neo4j>
+
+
+## LlamaIndex
+
+Download `ollama` and launch: <https://github.com/ollama/ollama>
 
 ```bash
 ollama run llama3
@@ -20,3 +25,8 @@ Then make sure you have the `nltk` corpora loaded:
 python3 load_nltk.py
 ```
 
+To parse/load a KG based on the Wikipedia example, run:
+
+```bash
+python3 llama_rag.py
+```

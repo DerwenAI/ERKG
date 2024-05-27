@@ -142,9 +142,12 @@ if __name__ == "__main__":
         auto_suggest = False,
     )
 
+
+    ## NOTE: uncomment the `documents` parameter to build a KG
+    ## then comment the parameter to reuse the built KG
     query_engine: RetrieverQueryEngine = build_engine(
         service_context,
-        #documents = documents,
+        documents = documents,
         response_mode = "refine",  # "compact"
     )
 
