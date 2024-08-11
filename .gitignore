@@ -6,6 +6,9 @@
 1_lasvegas/examples/vegas.?.html
 1_lasvegas/export.json
 1_lasvegas/article/before_after.*
+2_london/opensanctions/*.json
+2_london/opensanctions/*.tgz
+2_london/opensanctions/subset/*
 
 icij/demo/
 icij/temp/
