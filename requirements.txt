@@ -10,3 +10,4 @@ pyvis >= 0.3
 seaborn >= 0.13
 tqdm >= 4.66
 watermark >= 2.4
+kuzu == 0.5.0
