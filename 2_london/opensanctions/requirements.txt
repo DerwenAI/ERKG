@@ -1,11 +1,14 @@
+graphdatascience[networkx] >= 1.9
 icecream >= 2.1
 ipywidgets >= 8.1
 jupyterlab >= 4.2
 jupyterlab_execute_time >= 3.1
 kuzu >= 0.5
+neo4j >= 5.18
 networkx >= 3.3
 pandas >= 2.2
 pyinstrument >= 4.6
+python-dotenv >= 1.0
 pyvis >= 0.3
 tqdm >= 4.66
 watermark >= 2.4
